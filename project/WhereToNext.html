@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WhereToNext — Discover Your World</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script>
+// WhereToNext — passport, visa, and destination data
+window.WTN = (() => {
+
+  const PASSPORTS = [
+    { code: 'JP', name: 'Japan',           flag: '🇯🇵', tier: 1 },
+    { code: 'DE', name: 'Germany',         flag: '🇩🇪', tier: 1 },
+    { code: 'SG', name: 'Singapore',       flag: '🇸🇬', tier: 1 },
+    { code: 'FR', name: 'France',          flag: '🇫🇷', tier: 1 },
+    { code: 'IT', name: 'Italy',           flag: '🇮🇹', tier: 1 },
+    { code: 'ES', name: 'Spain',           flag: '🇪🇸', tier: 1 },
+    { code: 'FI', name: 'Finland',         flag: '🇫🇮', tier: 1 },
+    { code: 'SE', name: 'Sweden',          flag: '🇸🇪', tier: 1 },
+    { code: 'NL', name: 'Netherlands',     flag: '🇳🇱', tier: 1 },
+    { code: 'AU', name: 'Australia',       flag: '🇦🇺', tier: 1 },
+    { code: 'NZ', name: 'New Zealand',     flag: '🇳🇿', tier: 1 },
+    { code: 'CA', name: 'Canada',          flag: '🇨🇦', tier: 1 },
+    { code: 'KR', name: 'South Korea',     flag: '🇰🇷', tier: 1 },
+    { code: 'CH', name: 'Switzerland',     flag: '🇨🇭', tier: 1 },
+    { code: 'AT', name: 'Austria',         flag: '🇦🇹', tier: 1 },
+    { code: 'PT', name: 'Portugal',        flag: '🇵🇹', tier: 1 },
+    { code: 'US', name: 'United States',   flag: '🇺🇸', tier: 2 },
+    { code: 'GB', name: 'United Kingdom',  flag: '🇬🇧', tier: 2 },
+    { code: 'BR', name: 'Brazil',          flag: '🇧🇷', tier: 2 },
+    { code: 'AR', name: 'Argentina',       flag: '🇦🇷', tier: 2 },
+    { code: 'CL', name: 'Chile',           flag: '🇨🇱', tier: 2 },
+    { code: 'MX', name: 'Mexico',          flag: '🇲🇽', tier: 3 },
+    { code: 'TR', name: 'Turkey',          flag: '🇹🇷', tier: 3 },
+    { code: 'ZA', name: 'South Africa',    flag: '🇿🇦', tier: 3 },
+    { code: 'TH', name: 'Thailand',        flag: '🇹🇭', tier: 3 },
+    { code: 'MY', name: 'Malaysia',        flag: '🇲🇾', tier: 3 },
+    { code: 'UA', name: 'Ukraine',         flag: '🇺🇦', tier: 3 },
+    { code: 'IN', name: 'India',           flag: '🇮🇳', tier: 4 },
+    { code: 'CN', name: 'China',           flag: '🇨🇳', tier: 4 },
+    { code: 'PK', name: 'Pakistan',        flag: '🇵🇰', tier: 4 },
+    { code: 'NG', name: 'Nigeria',         flag: '🇳🇬', tier: 4 },
+    { code: 'PH', name: 'Philippines',     flag: '🇵🇭', tier: 4 },
+    { code: 'BD', name: 'Bangladesh',      flag: '🇧🇩', tier: 4 },
+    { code: 'ET', name: 'Ethiopia',        flag: '🇪🇹', tier: 4 },
+    { code: 'GH', name: 'Ghana',           flag: '🇬🇭', tier: 4 },
+  ];
+
+  const VISAS = [
+    { code: 'schengen',  name: 'Schengen Visa or Residence Permit',  short: 'Schengen' },
+    { code: 'us-b1b2',   name: 'US B1/B2 Visitor Visa',              short: 'US Visa' },
+    { code: 'uk-visitor',name: 'UK Standard Visitor Visa',            short: 'UK Visa' },
+    { code: 'canada-trv',name: 'Canadian Visitor Visa (TRV)',          short: 'Canada Visa' },
+    { code: 'japan-visa',name: 'Japan Single/Multiple Entry Visa',    short: 'Japan Visa' },
+    { code: 'uae-res',   name: 'UAE Residence Permit',                short: 'UAE Residence' },
+  ];
+
+  const RESIDENCE_COUNTRIES = [
+    { code: 'DE', name: 'Germany',         schengen: true  },
+    { code: 'FR', name: 'France',          schengen: true  },
+    { code: 'IT', name: 'Italy',           schengen: true  },
+    { code: 'ES', name: 'Spain',           schengen: true  },
+    { code: 'NL', name: 'Netherlands',     schengen: true  },
+    { code: 'PT', name: 'Portugal',        schengen: true  },
+    { code: 'AT', name: 'Austria',         schengen: true  },
+    { code: 'CH', name: 'Switzerland',     schengen: true  },
+    { code: 'SE', name: 'Sweden',          schengen: true  },
+    { code: 'NO', name: 'Norway',          schengen: true  },
+    { code: 'DK', name: 'Denmark',         schengen: true  },
+    { code: 'FI', name: 'Finland',         schengen: true  },
+    { code: 'BE', name: 'Belgium',         schengen: true  },
+    { code: 'PL', name: 'Poland',          schengen: true  },
+    { code: 'CZ', name: 'Czech Republic',  schengen: true  },
+    { code: 'GR', name: 'Greece',          schengen: true  },
+    { code: 'US', name: 'United States',   schengen: false },
+    { code: 'GB', name: 'United Kingdom',  schengen: false },
+    { code: 'CA', name: 'Canada',          schengen: false },
+    { code: 'AU', name: 'Australia',       schengen: false },
+    { code: 'AE', name: 'UAE',             schengen: false },
+    { code: 'JP', name: 'Japan',           schengen: false },
+    { code: 'SG', name: 'Singapore',       schengen: false },
+    { code: 'BR', name: 'Brazil',          schengen: false },
+    { code: 'IN', name: 'India',           schengen: false },
+    { code: 'TH', name: 'Thailand',        schengen: false },
+    { code: 'ZA', name: 'South Africa',    schengen: false },
+    { code: 'TR', name: 'Turkey',          schengen: false },
+  ];
+
+  // Access helpers
+  const VF    = (days, note='') => ({ type: 'visa-free',       days, note });
+  const VOA   = (days, note='') => ({ type: 'visa-on-arrival', days, note });
+  const EV    = (days, note='') => ({ type: 'e-visa',          days, note });
+  const VR    = ()               => ({ type: 'visa-required',  days: null, note: '' });
+
+  // tiers[0]=tier1, tiers[1]=tier2, tiers[2]=tier3, tiers[3]=tier4
+  const DESTINATIONS = [
+    {
+      code:'MV', name:'Maldives',         flag:'🇲🇻', region:'Indian Ocean',
+      tagline:'Overwater paradise — open to everyone',
+      gradient:['#042a4a','#061525'], accent:'#22d3ee',
+      highlights:['North Malé Atoll','Baa Atoll UNESCO Biosphere','Addu Atoll','Huvadhoo Atoll'],
+      currency:'Maldivian Rufiyaa (MVR)', language:'Dhivehi',
+      tiers:[VOA(30),VOA(30),VOA(30),VOA(30)],
+      visaUnlocks:[], visaUnlockAccess:null,
+      entryNote:'All nationalities receive a 30-day stamp on arrival. No advance visa required.',
+    },
+    {
+      code:'GE', name:'Georgia',          flag:'🇬🇪', region:'Caucasus',
+      tagline:'365-day stays with zero paperwork',
+      gradient:['#2e1212','#180808'], accent:'#f87171',
+      highlights:['Tbilisi Old Town','Kazbegi','Georgian Wine Regions','Black Sea Coast'],
+      currency:'Georgian Lari (GEL)', language:'Georgian',
+      tiers:[VF(365),VF(365),VF(365),VF(365)],
+      visaUnlocks:[], visaUnlockAccess:null,
+      entryNote:'Georgia offers one of the world\'s most generous visa policies: 365 days, visa-free, for almost all nationalities.',
+    },
+    {
+      code:'NP', name:'Nepal',            flag:'🇳🇵', region:'South Asia',
+      tagline:'Rooftop of the world',
+      gradient:['#1a2e18','#0d1a0c'], accent:'#4ade80',
+      highlights:['Kathmandu Valley','Annapurna Circuit','Everest Base Camp','Pokhara'],
+      currency:'Nepalese Rupee (NPR)', language:'Nepali',
+      tiers:[VOA(90),VOA(90),VOA(90),VOA(90)],
+      visaUnlocks:[], visaUnlockAccess:null,
+      entryNote:'Visa on arrival available for most nationalities at Tribhuvan International Airport. 15-day, 30-day, and 90-day options.',
+    },
+    {
+      code:'KH', name:'Cambodia',         flag:'🇰🇭', region:'Southeast Asia',
+      tagline:'Ancient temples, open borders',
+      gradient:['#2e1e08','#180f04'], accent:'#fbbf24',
+      highlights:['Angkor Wat','Phnom Penh','Siem Reap','Koh Rong'],
+      currency:'Cambodian Riel (KHR)', language:'Khmer',
+      tiers:[EV(30),EV(30),EV(30),EV(30)],
+      visaUnlocks:[], visaUnlockAccess:null,
+      entryNote:'e-Visa available for USD 36 at evisa.gov.kh. Visa on arrival also available at major entry points.',
+    },
+    {
+      code:'RW', name:'Rwanda',           flag:'🇷🇼', region:'Africa',
+      tagline:'Africa\'s cleanest, fastest-rising capital',
+      gradient:['#122e12','#081808'], accent:'#86efac',
+      highlights:['Volcanoes National Park','Kigali','Lake Kivu','Nyungwe Forest'],
+      currency:'Rwandan Franc (RWF)', language:'Kinyarwanda / English / French',
+      tiers:[EV(30),EV(30),EV(30),EV(30)],
+      visaUnlocks:[], visaUnlockAccess:null,
+      entryNote:'e-Visa required for most nationalities. Apply in advance at irembo.gov.rw for USD 50.',
+    },
+    {
+      code:'AM', name:'Armenia',          flag:'🇦🇲', region:'Caucasus',
+      tagline:'Ancient churches and warm hospitality',
+      gradient:['#2a1228','#180a16'], accent:'#e879f9',
+      highlights:['Yerevan','Garni Temple','Lake Sevan','Tatev Monastery','Dilijan Forest'],
+      currency:'Armenian Dram (AMD)', language:'Armenian',
+      tiers:[VF(180),VF(180),VF(180),VF(180)],
+      visaUnlocks:[], visaUnlockAccess:null,
+      entryNote:'Armenia welcomes visitors from almost all countries with visa-free access for up to 180 days.',
+    },
+    {
+      code:'CO', name:'Colombia',         flag:'🇨🇴', region:'South America',
+      tagline:'Magic realism made real',
+      gradient:['#2a2208','#160e02'], accent:'#fde047',
+      highlights:['Cartagena Old Town','Medellín','Bogotá','Coffee Region','Tayrona Park'],
+      currency:'Colombian Peso (COP)', language:'Spanish',
+      tiers:[VF(90),VF(90),VF(90),VF(90)],
+      visaUnlocks:[], visaUnlockAccess:null,
+      entryNote:'Colombia is remarkably open — most nationalities enter visa-free for 90 days, with possible extension.',
+    },
+    {
+      code:'KG', name:'Kyrgyzstan',       flag:'🇰🇬', region:'Central Asia',
+      tagline:'Nomadic skies and glacier lakes',
+      gradient:['#12122e','#080818'], accent:'#818cf8',
+      highlights:['Bishkek','Issyk-Kul Lake','Tian Shan Mountains','Song-Kol Lake'],
+      currency:'Kyrgyzstani Som (KGS)', language:'Kyrgyz / Russian',
+      tiers:[VF(60),VF(60),VF(30),VOA(30)],
+      visaUnlocks:[], visaUnlockAccess:null,
+      entryNote:'Many nationalities enter visa-free. e-Visa available at evisa.e-gov.kg. Visa on arrival at Manas Airport.',
+    },
+    {
+      code:'JO', name:'Jordan',           flag:'🇯🇴', region:'Middle East',
+      tagline:'Petra, Wadi Rum, and the Dead Sea',
+      gradient:['#2a1a08','#160d04'], accent:'#fb923c',
+      highlights:['Petra','Wadi Rum','Dead Sea','Aqaba','Jerash'],
+      currency:'Jordanian Dinar (JOD)', language:'Arabic',
+      tiers:[VOA(30),VOA(30),VOA(30),VOA(30)],
+      visaUnlocks:[], visaUnlockAccess:null,
+      entryNote:'Jordan Visa on Arrival available at all major ports of entry. Jordan Pass strongly recommended for tourists.',
+    },
+    {
+      code:'TZ', name:'Tanzania',         flag:'🇹🇿', region:'Africa',
+      tagline:'Serengeti, Kilimanjaro, Zanzibar',
+      gradient:['#122a12','#081608'], accent:'#4ade80',
+      highlights:['Serengeti','Kilimanjaro','Zanzibar','Ngorongoro','Selous'],
+      currency:'Tanzanian Shilling (TZS)', language:'Swahili / English',
+      tiers:[EV(90),EV(90),EV(90),EV(90)],
+      visaUnlocks:[], visaUnlockAccess:null,
+      entryNote:'e-Visa required for most nationalities. Apply at immigration.go.tz. Single-entry USD 50.',
+    },
+    // ---- VISA-UNLOCK DESTINATIONS (the "surprise" section) ----
+    {
+      code:'AL', name:'Albania',          flag:'🇦🇱', region:'Europe',
+      tagline:'The Riviera\'s best-kept secret',
+      gradient:['#2e1010','#1a0808'], accent:'#f87171',
+      highlights:['Albanian Riviera','Berat','Gjirokastër','Tirana','Valbona Valley'],
+      currency:'Albanian Lek (ALL)', language:'Albanian',
+      tiers:[VF(90),VF(90),VF(90),VR()],
+      visaUnlocks:['schengen','us-b1b2','uk-visitor'],
+      visaUnlockAccess:VF(90),
+      entryNote:'Holders of a valid Schengen, US B1/B2, or UK visitor visa may enter Albania visa-free for up to 90 days.',
+    },
+    {
+      code:'XK', name:'Kosovo',           flag:'🇽🇰', region:'Europe',
+      tagline:'Europe\'s youngest, most welcoming nation',
+      gradient:['#10162e','#080d1a'], accent:'#60a5fa',
+      highlights:['Pristina','Prizren Old Bazaar','Rugova Canyon','Mirusha Waterfalls'],
+      currency:'Euro (EUR)', language:'Albanian / Serbian',
+      tiers:[VF(90),VF(90),VR(),VR()],
+      visaUnlocks:['schengen','us-b1b2'],
+      visaUnlockAccess:VF(90),
+      entryNote:'Holders of a valid Schengen or US visa/residence permit may enter Kosovo visa-free for up to 90 days.',
+    },
+    {
+      code:'MK', name:'North Macedonia',  flag:'🇲🇰', region:'Europe',
+      tagline:'Balkans without the tourist crowds',
+      gradient:['#2a2210','#161208'], accent:'#fcd34d',
+      highlights:['Ohrid Lake UNESCO Site','Skopje','Mavrovo National Park','Bitola'],
+      currency:'Macedonian Denar (MKD)', language:'Macedonian / Albanian',
+      tiers:[VF(90),VF(90),VR(),VR()],
+      visaUnlocks:['schengen','us-b1b2'],
+      visaUnlockAccess:VF(90),
+      entryNote:'Valid Schengen or US visa holders may enter North Macedonia for up to 90 days without an additional visa.',
+    },
+    {
+      code:'MD', name:'Moldova',          flag:'🇲🇩', region:'Europe',
+      tagline:'Wine country entirely off the map',
+      gradient:['#12221a','#081610'], accent:'#34d399',
+      highlights:['Chișinău','Orheiul Vechi','Cricova Wine Cellars','Transnistria','Saharna Monastery'],
+      currency:'Moldovan Leu (MDL)', language:'Romanian / Russian',
+      tiers:[VF(90),VF(90),VR(),VR()],
+      visaUnlocks:['schengen'],
+      visaUnlockAccess:VF(90),
+      entryNote:'Schengen visa or residence permit holders can enter Moldova visa-free for 90 days.',
+    },
+    {
+      code:'BA', name:'Bosnia & Herz.',   flag:'🇧🇦', region:'Europe',
+      tagline:'Ottoman soul, Adriatic spirit',
+      gradient:['#12181e','#080d14'], accent:'#38bdf8',
+      highlights:['Sarajevo','Mostar Old Bridge','Blagaj','Kravice Waterfalls','Trebinje'],
+      currency:'Bosnian Mark (BAM)', language:'Bosnian / Serbian / Croatian',
+      tiers:[VF(90),VF(90),VR(),VR()],
+      visaUnlocks:['schengen','us-b1b2','uk-visitor'],
+      visaUnlockAccess:VF(90),
+      entryNote:'Holders of valid Schengen, US, or UK visas may enter Bosnia & Herzegovina visa-free for up to 90 days.',
+    },
+    {
+      code:'MX', name:'Mexico',           flag:'🇲🇽', region:'Americas',
+      tagline:'Pyramids, beaches, and living color',
+      gradient:['#1a2a10','#0e1a08'], accent:'#a3e635',
+      highlights:['Mexico City','Cancún','Oaxaca','Chichén Itzá','Tulum','Copper Canyon'],
+      currency:'Mexican Peso (MXN)', language:'Spanish',
+      tiers:[VF(180),VF(180),VF(90),VR()],
+      visaUnlocks:['us-b1b2','canada-trv'],
+      visaUnlockAccess:VF(180),
+      entryNote:'Holders of a valid US or Canadian visa are exempt from obtaining a Mexican tourist visa.',
+    },
+    // ---- MAINSTREAM DESTINATIONS ----
+    {
+      code:'TH', name:'Thailand',         flag:'🇹🇭', region:'Southeast Asia',
+      tagline:'The original Land of Smiles',
+      gradient:['#102228','#081418'], accent:'#22d3ee',
+      highlights:['Bangkok','Chiang Mai','Koh Samui','Ayutthaya','Pai'],
+      currency:'Thai Baht (THB)', language:'Thai',
+      tiers:[VF(60),VF(60),VF(30),VOA(15)],
+      visaUnlocks:[], visaUnlockAccess:null,
+      entryNote:'Thailand offers generous visa-free entry. Duration varies by passport. 60-day e-Visa available for longer stays.',
+    },
+    {
+      code:'ID', name:'Indonesia',        flag:'🇮🇩', region:'Southeast Asia',
+      tagline:'17,000 islands of wonder',
+      gradient:['#2e1010','#1a0808'], accent:'#fca5a5',
+      highlights:['Bali','Komodo Island','Raja Ampat','Borobudur','Lombok'],
+      currency:'Indonesian Rupiah (IDR)', language:'Indonesian / Javanese',
+      tiers:[VF(30),VF(30),VOA(30),VOA(30)],
+      visaUnlocks:[], visaUnlockAccess:null,
+      entryNote:'Many nationalities enter visa-free for 30 days at Bali and Jakarta. Visa on Arrival also available.',
+    },
+    {
+      code:'MA', name:'Morocco',          flag:'🇲🇦', region:'Africa',
+      tagline:'Colors of the medina',
+      gradient:['#2a1010','#1a0808'], accent:'#fb923c',
+      highlights:['Marrakech','Fes Medina','Sahara Desert','Chefchaouen','Essaouira'],
+      currency:'Moroccan Dirham (MAD)', language:'Arabic / Tamazight / French',
+      tiers:[VF(90),VF(90),VF(90),VR()],
+      visaUnlocks:[], visaUnlockAccess:null,
+      entryNote:'Many nationalities enter visa-free. Certain passport holders require advance visa from Moroccan embassy.',
+    },
+    {
+      code:'ZA', name:'South Africa',     flag:'🇿🇦', region:'Africa',
+      tagline:'The Rainbow Nation',
+      gradient:['#12221a','#081610'], accent:'#4ade80',
+      highlights:['Cape Town','Kruger National Park','Johannesburg','Garden Route','Drakensberg'],
+      currency:'South African Rand (ZAR)', language:'Zulu / Xhosa / Afrikaans / English',
+      tiers:[VF(30),VF(30),VF(30),VR()],
+      visaUnlocks:[], visaUnlockAccess:null,
+      entryNote:'Many nationalities enter visa-free for 30 days. Some nationalities require advance visa.',
+    },
+    {
+      code:'JP', name:'Japan',            flag:'🇯🇵', region:'Asia',
+      tagline:'Tradition at the speed of light',
+      gradient:['#2a1022','#180814'], accent:'#f9a8d4',
+      highlights:['Tokyo','Kyoto','Osaka','Hiroshima','Hakone','Nara'],
+      currency:'Japanese Yen (JPY)', language:'Japanese',
+      tiers:[VF(90),VF(90),VR(),VR()],
+      visaUnlocks:[], visaUnlockAccess:null,
+      entryNote:'Japan\'s visa exemption program covers 70+ countries. Non-exempt nationalities must apply via Japanese embassies.',
+    },
+    {
+      code:'FR', name:'France',           flag:'🇫🇷', region:'Europe',
+      tagline:'The Schengen gateway',
+      gradient:['#101628','#080d18'], accent:'#93c5fd',
+      highlights:['Paris','French Riviera','Lyon','Mont-Saint-Michel','Alsace'],
+      currency:'Euro (EUR)', language:'French',
+      tiers:[VF(90),VF(90),VR(),VR()],
+      visaUnlocks:[], visaUnlockAccess:null,
+      entryNote:'Part of the Schengen Area. Non-exempt countries require a Schengen C-Visa from French consulates.',
+    },
+    {
+      code:'IT', name:'Italy',            flag:'🇮🇹', region:'Europe',
+      tagline:'La dolce vita',
+      gradient:['#122210','#0a1808'], accent:'#86efac',
+      highlights:['Rome','Venice','Florence','Amalfi Coast','Sicily','Cinque Terre'],
+      currency:'Euro (EUR)', language:'Italian',
+      tiers:[VF(90),VF(90),VR(),VR()],
+      visaUnlocks:[], visaUnlockAccess:null,
+      entryNote:'Part of the Schengen Area. Non-exempt nationalities require a Schengen visa.',
+    },
+    {
+      code:'PT', name:'Portugal',         flag:'🇵🇹', region:'Europe',
+      tagline:'Europe\'s westernmost frontier',
+      gradient:['#101628','#060c18'], accent:'#a78bfa',
+      highlights:['Lisbon','Porto','Algarve','Sintra','Azores','Madeira'],
+      currency:'Euro (EUR)', language:'Portuguese',
+      tiers:[VF(90),VF(90),VR(),VR()],
+      visaUnlocks:[], visaUnlockAccess:null,
+      entryNote:'Part of the Schengen Area. Non-exempt nationalities require a Schengen visa.',
+    },
+    {
+      code:'KE', name:'Kenya',            flag:'🇰🇪', region:'Africa',
+      tagline:'The Great Migration awaits',
+      gradient:['#102210','#081608'], accent:'#4ade80',
+      highlights:['Masai Mara','Nairobi','Mount Kenya','Diani Beach','Amboseli'],
+      currency:'Kenyan Shilling (KES)', language:'Swahili / English',
+      tiers:[EV(90),EV(90),EV(90),EV(90)],
+      visaUnlocks:[], visaUnlockAccess:null,
+      entryNote:'Kenya requires an Electronic Travel Authorization (eTA) for all visitors. Apply at etakenya.go.ke before travel.',
+    },
+    {
+      code:'AU', name:'Australia',        flag:'🇦🇺', region:'Oceania',
+      tagline:'The world\'s largest island-continent',
+      gradient:['#12221a','#081610'], accent:'#34d399',
+      highlights:['Sydney','Great Barrier Reef','Melbourne','Uluru','Whitsundays'],
+      currency:'Australian Dollar (AUD)', language:'English',
+      tiers:[EV(90),EV(90),VR(),VR()],
+      visaUnlocks:[], visaUnlockAccess:null,
+      entryNote:'Most Tier 1 nationalities obtain an ETA or eVisitor online. Others must apply for a standard visitor visa.',
+    },
+  ];
+
+  const SCHENGEN_CODES = new Set([
+    'AT','BE','CZ','DK','EE','FI','FR','DE','GR','HU','IS','IT','LV',
+    'LI','LT','LU','MT','NL','NO','PL','PT','SK','SI','ES','SE','CH',
+  ]);
+
+  function computeDestinations(passportCode, residenceCode, selectedVisas) {
+    const passport = PASSPORTS.find(p => p.code === passportCode);
+    if (!passport) return { accessible: [], surprising: [] };
+    const tier = passport.tier;
+
+    // Build effective visa set
+    const effectiveVisas = new Set(selectedVisas || []);
+    if (residenceCode) {
+      const res = RESIDENCE_COUNTRIES.find(r => r.code === residenceCode);
+      if (res?.schengen || SCHENGEN_CODES.has(residenceCode)) effectiveVisas.add('schengen');
+      if (residenceCode === 'US') effectiveVisas.add('us-b1b2');
+      if (residenceCode === 'GB') effectiveVisas.add('uk-visitor');
+      if (residenceCode === 'CA') effectiveVisas.add('canada-trv');
+      if (residenceCode === 'AE') effectiveVisas.add('uae-res');
+      if (residenceCode === 'JP') effectiveVisas.add('japan-visa');
+    }
+
+    const accessible = [];
+    const surprising = [];
+
+    for (const dest of DESTINATIONS) {
+      if (dest.code === passportCode) continue; // skip own country
+
+      const tierAccess = dest.tiers[tier - 1];
+      const unlockVia = dest.visaUnlocks.find(v => effectiveVisas.has(v));
+
+      let access = null;
+      let isSurprising = false;
+      let unlockViaCode = null;
+
+      if (tierAccess && tierAccess.type !== 'visa-required') {
+        access = { ...tierAccess };
+      } else if (unlockVia && dest.visaUnlockAccess) {
+        access = { ...dest.visaUnlockAccess };
+        isSurprising = true;
+        unlockViaCode = unlockVia;
+      }
+
+      if (access) {
+        const result = { ...dest, access, isSurprising, unlockViaCode };
+        accessible.push(result);
+        if (isSurprising) surprising.push(result);
+      }
+    }
+
+    // Sort: surprising first by name, then rest by region
+    accessible.sort((a, b) => {
+      if (a.isSurprising && !b.isSurprising) return -1;
+      if (!a.isSurprising && b.isSurprising) return 1;
+      return a.name.localeCompare(b.name);
+    });
+
+    return { accessible, surprising };
+  }
+
+  function getVisaLabel(visa) {
+    return VISAS.find(v => v.code === visa)?.short || visa;
+  }
+
+  return { PASSPORTS, VISAS, RESIDENCE_COUNTRIES, DESTINATIONS, computeDestinations, getVisaLabel };
+})();
+
+</script>
+<style>
+:root {
+  --bg:       oklch(0.09 0.008 245);
+  --bg2:      oklch(0.13 0.008 245);
+  --bg3:      oklch(0.17 0.008 245);
+  --bg4:      oklch(0.21 0.008 245);
+  --accent:   oklch(0.72 0.17 195);
+  --accent2:  oklch(0.78 0.12 75);
+  --txt:      oklch(0.96 0.005 245);
+  --txt2:     oklch(0.65 0.010 245);
+  --txt3:     oklch(0.42 0.008 245);
+  --border:   oklch(0.22 0.008 245);
+  --border2:  oklch(0.28 0.008 245);
+  --r:        12px;
+  --r2:       20px;
+  --serif:    'Cormorant Garamond', Georgia, serif;
+  --sans:     'DM Sans', system-ui, sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--txt);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+button { font-family: var(--sans); cursor: pointer; border: none; background: none; }
+input, select { font-family: var(--sans); }
+
+/* ── Page transitions ── */
+.page-enter { animation: fadeUp .35s ease both; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:none; } }
+
+/* ── Nav ── */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 40px;
+  background: linear-gradient(to bottom, var(--bg) 60%, transparent);
+  pointer-events: none;
+}
+.nav-logo {
+  font-family: var(--serif); font-size: 22px; font-weight: 600; letter-spacing: -.3px;
+  color: var(--txt); cursor: pointer; pointer-events: all;
+  display: flex; align-items: center; gap: 8px;
+}
+.nav-logo-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); display: inline-block; }
+.nav-action { pointer-events: all; color: var(--txt2); font-size: 14px; font-weight: 500; cursor: pointer; transition: color .2s; }
+.nav-action:hover { color: var(--txt); }
+
+/* ── Dot-grid hero background ── */
+.hero-bg {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image: radial-gradient(circle at 50% 60%, oklch(0.20 0.04 210 / .18) 0%, transparent 60%),
+    radial-gradient(oklch(0.35 0.02 245 / .12) 1px, transparent 1px);
+  background-size: 100% 100%, 28px 28px;
+}
+.hero-glow {
+  position: absolute; top: -120px; left: 50%; transform: translateX(-50%);
+  width: 800px; height: 800px; border-radius: 50%;
+  background: radial-gradient(circle, oklch(0.72 0.17 195 / .06) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+/* ── HOME ── */
+.home { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; padding: 120px 24px 80px; text-align: center; }
+.home-eyebrow { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); font-weight: 500; margin-bottom: 24px; }
+.home-h1 { font-family: var(--serif); font-size: clamp(52px, 8vw, 96px); font-weight: 300; line-height: 1.05; color: var(--txt); margin-bottom: 28px; max-width: 840px; }
+.home-h1 em { font-style: italic; color: var(--accent); }
+.home-sub { font-size: 17px; color: var(--txt2); max-width: 520px; line-height: 1.7; margin-bottom: 48px; font-weight: 300; }
+.home-cta { display: inline-flex; align-items: center; gap: 10px; background: var(--accent); color: #000; font-size: 15px; font-weight: 600; padding: 16px 32px; border-radius: 100px; cursor: pointer; transition: transform .2s, box-shadow .2s; border: none; letter-spacing: -.1px; }
+.home-cta:hover { transform: translateY(-2px); box-shadow: 0 12px 36px oklch(0.72 0.17 195 / .35); }
+.home-cta svg { transition: transform .2s; }
+.home-cta:hover svg { transform: translateX(3px); }
+.home-stats { display: flex; gap: 48px; margin-top: 72px; color: var(--txt3); font-size: 13px; font-weight: 500; letter-spacing: .5px; }
+.home-stat strong { display: block; font-family: var(--serif); font-size: 32px; font-weight: 300; color: var(--txt2); margin-bottom: 2px; }
+.home-features { display: flex; gap: 24px; margin-top: 96px; flex-wrap: wrap; justify-content: center; max-width: 860px; }
+.home-feat { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 24px 28px; text-align: left; flex: 1; min-width: 220px; max-width: 260px; }
+.home-feat-icon { font-size: 22px; margin-bottom: 14px; }
+.home-feat h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+.home-feat p { font-size: 13px; color: var(--txt2); line-height: 1.6; }
+
+/* ── FORM ── */
+.form-page { min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 110px 24px 80px; }
+.form-wrap { width: 100%; max-width: 580px; }
+.form-header { margin-bottom: 48px; }
+.form-eyebrow { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); font-weight: 500; margin-bottom: 12px; }
+.form-title { font-family: var(--serif); font-size: 42px; font-weight: 300; line-height: 1.15; }
+.form-title em { font-style: italic; color: var(--txt2); }
+.form-group { margin-bottom: 28px; }
+.form-label { display: block; font-size: 13px; font-weight: 600; letter-spacing: .3px; color: var(--txt2); margin-bottom: 8px; text-transform: uppercase; }
+.form-label span { font-weight: 400; color: var(--txt3); text-transform: none; letter-spacing: 0; margin-left: 6px; }
+.form-hint { font-size: 12px; color: var(--txt3); margin-top: 6px; }
+.form-divider { height: 1px; background: var(--border); margin: 36px 0; }
+
+/* SearchSelect */
+.ss-wrap { position: relative; }
+.ss-input-row {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r);
+  padding: 0 16px; height: 52px; cursor: pointer; transition: border-color .2s;
+}
+.ss-input-row:focus-within, .ss-input-row.open { border-color: var(--accent); }
+.ss-flag { font-size: 20px; flex-shrink: 0; }
+.ss-input { background: none; border: none; outline: none; color: var(--txt); font-size: 15px; flex: 1; font-family: var(--sans); }
+.ss-input::placeholder { color: var(--txt3); }
+.ss-chevron { color: var(--txt3); flex-shrink: 0; transition: transform .2s; }
+.ss-chevron.open { transform: rotate(180deg); }
+.ss-dropdown {
+  position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 200;
+  background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--r);
+  max-height: 260px; overflow-y: auto; box-shadow: 0 12px 40px #000a;
+}
+.ss-option { display: flex; align-items: center; gap: 10px; padding: 11px 16px; cursor: pointer; transition: background .15s; font-size: 15px; }
+.ss-option:hover, .ss-option.active { background: var(--bg4); }
+.ss-option-flag { font-size: 18px; }
+.ss-empty { padding: 20px; text-align: center; color: var(--txt3); font-size: 14px; }
+
+/* MultiSelect visas */
+.visa-grid { display: flex; flex-direction: column; gap: 8px; }
+.visa-chip {
+  display: flex; align-items: center; gap: 12px;
+  border: 1px solid var(--border); border-radius: var(--r);
+  padding: 12px 16px; cursor: pointer; transition: border-color .2s, background .2s;
+  background: var(--bg2); user-select: none;
+}
+.visa-chip:hover { border-color: var(--border2); }
+.visa-chip.selected { border-color: var(--accent); background: oklch(0.72 0.17 195 / .08); }
+.visa-chip-check { width: 20px; height: 20px; border-radius: 6px; border: 1.5px solid var(--border2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: background .2s, border-color .2s; }
+.visa-chip.selected .visa-chip-check { background: var(--accent); border-color: var(--accent); }
+.visa-chip-label { font-size: 14px; font-weight: 500; }
+.visa-chip-sub { font-size: 12px; color: var(--txt3); margin-top: 1px; }
+
+/* Submit button */
+.submit-btn {
+  width: 100%; height: 56px; border-radius: 100px;
+  background: var(--accent); color: #000; font-size: 16px; font-weight: 600;
+  cursor: pointer; border: none; transition: transform .2s, box-shadow .2s, opacity .2s;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  font-family: var(--sans);
+}
+.submit-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 36px oklch(0.72 0.17 195 / .3); }
+.submit-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── RESULTS ── */
+.results-page { min-height: 100vh; padding: 100px 24px 80px; max-width: 1180px; margin: 0 auto; }
+.results-header { margin-bottom: 56px; display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+.results-header-left {}
+.results-eyebrow { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--txt3); font-weight: 500; margin-bottom: 8px; }
+.results-title { font-family: var(--serif); font-size: 40px; font-weight: 300; display: flex; align-items: center; gap: 12px; }
+.results-edit { font-size: 13px; color: var(--accent); cursor: pointer; font-weight: 500; padding: 8px 16px; border: 1px solid oklch(0.72 0.17 195 / .3); border-radius: 100px; transition: background .2s; }
+.results-edit:hover { background: oklch(0.72 0.17 195 / .08); }
+.results-count { font-size: 14px; color: var(--txt2); margin-top: 6px; }
+
+/* Section */
+.section-title { font-family: var(--serif); font-size: 30px; font-weight: 300; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
+.section-sub { font-size: 14px; color: var(--txt2); margin-bottom: 28px; }
+.section-divider { height: 1px; background: var(--border); margin: 56px 0; }
+
+/* Filter chips */
+.filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 28px; }
+.filter-chip { padding: 7px 16px; border-radius: 100px; border: 1px solid var(--border); font-size: 13px; font-weight: 500; cursor: pointer; transition: all .15s; color: var(--txt2); background: none; }
+.filter-chip:hover { border-color: var(--border2); color: var(--txt); }
+.filter-chip.active { border-color: var(--accent); color: var(--accent); background: oklch(0.72 0.17 195 / .08); }
+
+/* Cards grid */
+.cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 20px; }
+
+/* Destination card */
+.dest-card {
+  border-radius: var(--r2); overflow: hidden; cursor: pointer;
+  transition: transform .25s, box-shadow .25s; position: relative;
+  border: 1px solid var(--border);
+}
+.dest-card:hover { transform: translateY(-4px); box-shadow: 0 20px 50px #0008; }
+.dest-card-hero {
+  height: 160px; display: flex; align-items: flex-end; padding: 20px;
+  position: relative; overflow: hidden;
+}
+.dest-card-flag { font-size: 56px; position: absolute; top: 16px; right: 18px; filter: drop-shadow(0 4px 12px #0006); line-height: 1; }
+.dest-card-region { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255,255,255,.5); font-weight: 500; }
+.dest-card-body { padding: 18px 20px 20px; background: var(--bg2); }
+.dest-card-name { font-family: var(--serif); font-size: 22px; font-weight: 400; margin-bottom: 4px; }
+.dest-card-tagline { font-size: 12px; color: var(--txt2); margin-bottom: 14px; line-height: 1.5; }
+.dest-card-footer { display: flex; align-items: center; justify-content: space-between; }
+.access-badge {
+  font-size: 11px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase;
+  padding: 4px 10px; border-radius: 100px;
+}
+.badge-vf   { background: oklch(0.72 0.17 195 / .15); color: var(--accent); }
+.badge-voa  { background: oklch(0.78 0.12 75 / .15);  color: var(--accent2); }
+.badge-ev   { background: oklch(0.65 0.15 280 / .15); color: oklch(0.70 0.15 280); }
+.badge-surprise { background: oklch(0.72 0.17 195 / .2); color: var(--accent); border: 1px solid oklch(0.72 0.17 195 / .3); }
+.dest-card-days { font-size: 12px; color: var(--txt3); }
+
+/* Surprise banner */
+.surprise-banner {
+  position: absolute; top: 14px; left: 14px; z-index: 2;
+  background: var(--accent); color: #000; font-size: 10px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; padding: 4px 10px; border-radius: 100px;
+}
+
+/* ── DETAIL ── */
+.detail-page { min-height: 100vh; padding: 0 0 80px; }
+.detail-hero {
+  height: 320px; position: relative; display: flex; align-items: flex-end;
+  padding: 40px;
+}
+.detail-hero-back {
+  position: absolute; top: 90px; left: 32px; z-index: 10;
+  display: flex; align-items: center; gap: 6px; color: rgba(255,255,255,.65);
+  font-size: 14px; font-weight: 500; cursor: pointer; transition: color .2s;
+}
+.detail-hero-back:hover { color: #fff; }
+.detail-hero-flag { font-size: 80px; position: absolute; top: 80px; right: 48px; filter: drop-shadow(0 8px 24px #0006); }
+.detail-hero-text { position: relative; z-index: 2; }
+.detail-hero-region { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,.5); margin-bottom: 8px; font-weight: 500; }
+.detail-hero-name { font-family: var(--serif); font-size: 56px; font-weight: 300; color: #fff; line-height: 1.05; }
+.detail-hero-tagline { font-size: 15px; color: rgba(255,255,255,.55); margin-top: 8px; }
+.detail-hero-overlay { position: absolute; inset: 0; background: linear-gradient(to right, rgba(0,0,0,.55) 0%, rgba(0,0,0,.15) 100%); }
+
+.detail-body { max-width: 720px; margin: 0 auto; padding: 48px 24px; }
+.detail-section { margin-bottom: 36px; }
+.detail-section-title { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--txt3); font-weight: 600; margin-bottom: 16px; }
+.detail-entry-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r2); padding: 28px; }
+.detail-entry-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.detail-entry-main {}
+.detail-entry-type { font-family: var(--serif); font-size: 32px; font-weight: 400; margin-bottom: 4px; }
+.detail-entry-desc { font-size: 14px; color: var(--txt2); line-height: 1.6; max-width: 420px; }
+.detail-entry-days { text-align: right; flex-shrink: 0; }
+.detail-entry-days-num { font-family: var(--serif); font-size: 48px; font-weight: 300; color: var(--accent); line-height: 1; }
+.detail-entry-days-label { font-size: 12px; color: var(--txt3); margin-top: 2px; text-transform: uppercase; letter-spacing: 1px; }
+.detail-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border); }
+.detail-meta-item { }
+.detail-meta-key { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--txt3); font-weight: 600; margin-bottom: 4px; }
+.detail-meta-val { font-size: 14px; font-weight: 500; }
+
+.detail-note { background: oklch(0.72 0.17 195 / .07); border: 1px solid oklch(0.72 0.17 195 / .2); border-radius: var(--r); padding: 16px 20px; font-size: 14px; color: var(--txt2); line-height: 1.7; }
+.detail-note strong { color: var(--accent); }
+
+.detail-highlights { display: flex; flex-wrap: wrap; gap: 8px; }
+.detail-highlight { background: var(--bg2); border: 1px solid var(--border); border-radius: 100px; padding: 6px 14px; font-size: 13px; color: var(--txt2); }
+
+.detail-disclaimer { background: oklch(0.78 0.12 75 / .06); border: 1px solid oklch(0.78 0.12 75 / .2); border-radius: var(--r); padding: 16px 20px; font-size: 13px; color: var(--txt3); line-height: 1.7; }
+
+.detail-cta { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 40px; }
+.detail-cta-btn {
+  height: 56px; padding: 0 40px; border-radius: 100px;
+  background: var(--accent); color: #000; font-size: 15px; font-weight: 600;
+  cursor: pointer; border: none; transition: transform .2s, box-shadow .2s;
+  font-family: var(--sans); display: flex; align-items: center; gap: 8px;
+}
+.detail-cta-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 36px oklch(0.72 0.17 195 / .35); }
+.detail-cta-sec {
+  height: 56px; padding: 0 28px; border-radius: 100px;
+  border: 1px solid var(--border2); color: var(--txt2); font-size: 15px; font-weight: 500;
+  cursor: pointer; transition: border-color .2s, color .2s; font-family: var(--sans);
+  display: flex; align-items: center; gap: 8px;
+}
+.detail-cta-sec:hover { border-color: var(--txt3); color: var(--txt); }
+
+/* Tweaks panel */
+.tweaks-panel {
+  position: fixed; bottom: 24px; right: 24px; z-index: 999;
+  background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--r2);
+  padding: 20px 24px; width: 260px; box-shadow: 0 16px 48px #0009;
+  display: none;
+}
+.tweaks-panel.visible { display: block; }
+.tweaks-title { font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--txt3); margin-bottom: 16px; }
+.tweak-row { margin-bottom: 14px; }
+.tweak-label { font-size: 12px; color: var(--txt2); margin-bottom: 6px; font-weight: 500; }
+.tweak-options { display: flex; gap: 6px; flex-wrap: wrap; }
+.tweak-opt { padding: 5px 12px; border-radius: 100px; border: 1px solid var(--border2); font-size: 12px; font-weight: 500; cursor: pointer; color: var(--txt2); transition: all .15s; }
+.tweak-opt.on { border-color: var(--accent); color: var(--accent); background: oklch(0.72 0.17 195 / .1); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* no results */
+.no-results { text-align: center; padding: 60px 24px; color: var(--txt3); }
+.no-results h3 { font-family: var(--serif); font-size: 28px; font-weight: 300; color: var(--txt2); margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+const { PASSPORTS, VISAS, RESIDENCE_COUNTRIES, computeDestinations, getVisaLabel } = window.WTN;
+
+// ── Helpers ──────────────────────────────────────────────────────────
+const ACCESS_LABELS = { 'visa-free':'Visa-Free', 'visa-on-arrival':'Visa on Arrival', 'e-visa':'e-Visa', 'visa-required':'Visa Required' };
+const ACCESS_BADGE  = { 'visa-free':'badge-vf', 'visa-on-arrival':'badge-voa', 'e-visa':'badge-ev' };
+
+function saveState(key, val) { try { localStorage.setItem('wtn_'+key, JSON.stringify(val)); } catch(e){} }
+function loadState(key, def) { try { const v = localStorage.getItem('wtn_'+key); return v ? JSON.parse(v) : def; } catch(e){ return def; } }
+
+// ── SearchSelect ──────────────────────────────────────────────────────
+function SearchSelect({ options, value, onChange, placeholder }) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState('');
+  const wrapRef = useRef();
+
+  useEffect(() => {
+    const h = e => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, []);
+
+  const selected = options.find(o => o.code === value);
+  const filtered = options.filter(o => o.name.toLowerCase().includes(q.toLowerCase()));
+
+  return (
+    <div className="ss-wrap" ref={wrapRef}>
+      <div className={`ss-input-row ${open ? 'open' : ''}`} onClick={() => { setOpen(!open); setQ(''); }}>
+        <span className="ss-flag">{selected?.flag || '🌐'}</span>
+        <input
+          className="ss-input"
+          placeholder={placeholder}
+          value={open ? q : (selected?.name || '')}
+          onChange={e => { setQ(e.target.value); if (!open) setOpen(true); }}
+          onClick={e => { e.stopPropagation(); setOpen(true); }}
+          readOnly={!open}
+        />
+        <svg className={`ss-chevron ${open ? 'open' : ''}`} width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </div>
+      {open && (
+        <div className="ss-dropdown">
+          {filtered.length === 0 ? <div className="ss-empty">No results</div> : filtered.map(o => (
+            <div key={o.code} className={`ss-option ${o.code === value ? 'active' : ''}`}
+              onClick={() => { onChange(o.code); setOpen(false); setQ(''); }}>
+              <span className="ss-option-flag">{o.flag}</span>
+              <span>{o.name}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Nav ───────────────────────────────────────────────────────────────
+function Nav({ page, onHome, onEdit }) {
+  return (
+    <nav className="nav">
+      <div className="nav-logo" onClick={onHome}>
+        <span className="nav-logo-dot"/> WhereToNext
+      </div>
+      {page === 'results' && <span className="nav-action" onClick={onEdit}>Edit documents</span>}
+      {page === 'detail'  && <span className="nav-action" onClick={() => history.back?.()}>← Results</span>}
+    </nav>
+  );
+}
+
+// ── HOME PAGE ─────────────────────────────────────────────────────────
+function HomePage({ onStart }) {
+  return (
+    <div className="home page-enter">
+      <div className="hero-bg"/>
+      <div className="hero-glow"/>
+      <div className="home-eyebrow">Passport intelligence</div>
+      <h1 className="home-h1">Your passport is more<br/><em>powerful</em> than you think.</h1>
+      <p className="home-sub">Discover every country you can visit — including the ones made accessible by your residence permit and existing visas.</p>
+      <button className="home-cta" onClick={onStart}>
+        Start Exploring
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <path d="M4 9h10M10 5l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
+      <div className="home-stats">
+        <div className="home-stat"><strong>195</strong>Countries covered</div>
+        <div className="home-stat"><strong>50+</strong>Visa unlock rules</div>
+        <div className="home-stat"><strong>Free</strong>Always</div>
+      </div>
+      <div className="home-features">
+        <div className="home-feat">
+          <div className="home-feat-icon">🛂</div>
+          <h3>Passport access</h3>
+          <p>See what countries your nationality can visit, sorted by entry type and stay duration.</p>
+        </div>
+        <div className="home-feat">
+          <div className="home-feat-icon">🏠</div>
+          <h3>Residence unlocks</h3>
+          <p>Your Schengen or US residence permit opens additional doors not visible in passport rankings.</p>
+        </div>
+        <div className="home-feat">
+          <div className="home-feat-icon">✈️</div>
+          <h3>Visa stacking</h3>
+          <p>A valid UK or US visa can grant access to entirely new destinations — we surface all of them.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── INPUT PAGE ────────────────────────────────────────────────────────
+function InputPage({ initial, onSubmit }) {
+  const [passport, setPassport]   = useState(initial?.passport || '');
+  const [residence, setResidence] = useState(initial?.residence || '');
+  const [visas, setVisas]         = useState(initial?.visas || []);
+
+  function toggleVisa(code) {
+    setVisas(v => v.includes(code) ? v.filter(x => x !== code) : [...v, code]);
+  }
+
+  function handleSubmit() {
+    if (!passport) return;
+    const data = { passport, residence, visas };
+    saveState('profile', data);
+    onSubmit(data);
+  }
+
+  // Filter out visas that are already implied by passport
+  const passportObj = PASSPORTS.find(p => p.code === passport);
+  const residenceObj = RESIDENCE_COUNTRIES.find(r => r.code === residence);
+
+  return (
+    <div className="form-page page-enter">
+      <div className="form-wrap">
+        <div className="form-header">
+          <div className="form-eyebrow">Step 1 of 1</div>
+          <h2 className="form-title">Tell us about your<br/><em>travel documents</em></h2>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Passport nationality <span>required</span></label>
+          <SearchSelect
+            options={PASSPORTS}
+            value={passport}
+            onChange={setPassport}
+            placeholder="Select your passport country…"
+          />
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Country of residence <span>optional</span></label>
+          <SearchSelect
+            options={RESIDENCE_COUNTRIES}
+            value={residence}
+            onChange={setResidence}
+            placeholder="Where do you currently live?"
+          />
+          <p className="form-hint">Living in a Schengen country or the US/UK may unlock additional destinations.</p>
+        </div>
+
+        <div className="form-divider"/>
+
+        <div className="form-group">
+          <label className="form-label">Existing visas or permits <span>optional, select all that apply</span></label>
+          <div className="visa-grid">
+            {VISAS.map(v => {
+              const sel = visas.includes(v.code);
+              return (
+                <div key={v.code} className={`visa-chip ${sel ? 'selected' : ''}`} onClick={() => toggleVisa(v.code)}>
+                  <div className="visa-chip-check">
+                    {sel && <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#000" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                  </div>
+                  <div>
+                    <div className="visa-chip-label">{v.name}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div style={{height: 32}}/>
+        <button className="submit-btn" disabled={!passport} onClick={handleSubmit}>
+          Find My Destinations
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M4 9h10M10 5l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── DESTINATION CARD ──────────────────────────────────────────────────
+function DestCard({ dest, onClick, cardStyle }) {
+  const { name, flag, region, tagline, gradient, accent, access, isSurprising } = dest;
+  const badgeClass = isSurprising ? 'badge-surprise' : (ACCESS_BADGE[access.type] || 'badge-vf');
+  const heroStyle = cardStyle === 'vivid'
+    ? { background: `linear-gradient(135deg, ${gradient[0]} 0%, ${gradient[1]} 100%)` }
+    : cardStyle === 'minimal'
+    ? { background: `var(--bg3)` }
+    : { background: `linear-gradient(135deg, ${gradient[0]} 0%, ${gradient[1]} 100%)` };
+
+  return (
+    <div className="dest-card" onClick={() => onClick(dest)}>
+      {isSurprising && <div className="surprise-banner">Surprise</div>}
+      <div className="dest-card-hero" style={heroStyle}>
+        <span className="dest-card-flag">{flag}</span>
+        <div className="dest-card-region">{region}</div>
+      </div>
+      <div className="dest-card-body">
+        <div className="dest-card-name">{name}</div>
+        <div className="dest-card-tagline">{tagline}</div>
+        <div className="dest-card-footer">
+          <span className={`access-badge ${badgeClass}`}>{ACCESS_LABELS[access.type]}</span>
+          {access.days && <span className="dest-card-days">Up to {access.days} days</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── RESULTS PAGE ──────────────────────────────────────────────────────
+function ResultsPage({ profile, onEdit, onDetail }) {
+  const [filter, setFilter] = useState('All');
+  const [cardStyle, setCardStyle] = useState(loadState('cardStyle', 'default'));
+
+  const { accessible, surprising } = computeDestinations(profile.passport, profile.residence, profile.visas);
+  const passport = PASSPORTS.find(p => p.code === profile.passport);
+
+  const regions = ['All', ...new Set(accessible.map(d => d.region))].sort((a,b) => a === 'All' ? -1 : 0);
+  const filtered = filter === 'All' ? accessible : accessible.filter(d => d.region === filter);
+  const nonSurprising = filtered.filter(d => !d.isSurprising);
+
+  useEffect(() => { saveState('cardStyle', cardStyle); }, [cardStyle]);
+
+  return (
+    <div className="results-page page-enter">
+      <div className="results-header">
+        <div className="results-header-left">
+          <div className="results-eyebrow">Your results</div>
+          <div className="results-title">
+            <span>{passport?.flag}</span>
+            <span>{passport?.name} passport</span>
+          </div>
+          <div className="results-count">{accessible.length} destinations accessible · {surprising.length} surprising finds</div>
+        </div>
+        <button className="results-edit" onClick={onEdit}>Edit documents</button>
+      </div>
+
+      {/* Surprising section */}
+      {surprising.length > 0 && (
+        <>
+          <h2 className="section-title">
+            <span style={{color:'var(--accent)'}}>✦</span>
+            Places You Didn't Know You Could Visit
+          </h2>
+          <p className="section-sub">
+            These destinations are accessible because of your{' '}
+            {[...new Set(surprising.map(d => getVisaLabel(d.unlockViaCode)))].join(' and ')} — not your passport alone.
+          </p>
+          <div className="cards-grid" style={{marginBottom: 0}}>
+            {surprising.map(d => <DestCard key={d.code} dest={d} onClick={onDetail} cardStyle={cardStyle}/>)}
+          </div>
+          <div className="section-divider"/>
+        </>
+      )}
+
+      {/* All accessible */}
+      <h2 className="section-title">All Accessible Destinations</h2>
+      <div className="filter-row">
+        {regions.map(r => (
+          <button key={r} className={`filter-chip ${filter === r ? 'active' : ''}`} onClick={() => setFilter(r)}>{r}</button>
+        ))}
+      </div>
+      {nonSurprising.length === 0 && filtered.length === 0 ? (
+        <div className="no-results">
+          <h3>No destinations in this region</h3>
+          <p>Try a different filter above.</p>
+        </div>
+      ) : (
+        <div className="cards-grid">
+          {(filter === 'All' ? nonSurprising : filtered.filter(d => !d.isSurprising)).map(d =>
+            <DestCard key={d.code} dest={d} onClick={onDetail} cardStyle={cardStyle}/>
+          )}
+          {filter !== 'All' && filtered.filter(d => d.isSurprising).map(d =>
+            <DestCard key={d.code} dest={d} onClick={onDetail} cardStyle={cardStyle}/>
+          )}
+        </div>
+      )}
+
+      {/* Tweaks panel (controlled by parent) */}
+      <div id="tweaks-results" className="tweaks-panel">
+        <div className="tweaks-title">Tweaks</div>
+        <div className="tweak-row">
+          <div className="tweak-label">Card style</div>
+          <div className="tweak-options">
+            {['default','vivid','minimal'].map(s => (
+              <div key={s} className={`tweak-opt ${cardStyle===s?'on':''}`} onClick={() => setCardStyle(s)}>
+                {s.charAt(0).toUpperCase()+s.slice(1)}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── DETAIL PAGE ───────────────────────────────────────────────────────
+function DetailPage({ dest, profile, onBack }) {
+  const { name, flag, region, tagline, gradient, accent, access, highlights, currency, language, entryNote, isSurprising, unlockViaCode } = dest;
+  const passport = PASSPORTS.find(p => p.code === profile.passport);
+
+  const heroGrad = `linear-gradient(135deg, ${gradient[0]} 0%, ${gradient[1]} 100%)`;
+  const accessLabel = ACCESS_LABELS[access.type] || access.type;
+
+  const unlockLabel = unlockViaCode ? getVisaLabel(unlockViaCode) : null;
+
+  return (
+    <div className="detail-page page-enter">
+      <div className="detail-hero" style={{background: heroGrad}}>
+        <div className="detail-hero-overlay"/>
+        <div className="detail-hero-back" onClick={onBack}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          Back
+        </div>
+        <span className="detail-hero-flag">{flag}</span>
+        <div className="detail-hero-text">
+          <div className="detail-hero-region">{region}</div>
+          <div className="detail-hero-name">{name}</div>
+          <div className="detail-hero-tagline">{tagline}</div>
+        </div>
+      </div>
+
+      <div className="detail-body">
+        {/* Entry summary */}
+        <div className="detail-section">
+          <div className="detail-section-title">Entry summary for {passport?.flag} {passport?.name} passport</div>
+          <div className="detail-entry-card">
+            <div className="detail-entry-row">
+              <div className="detail-entry-main">
+                <div className="detail-entry-type">{accessLabel}</div>
+                <div className="detail-entry-desc">
+                  {isSurprising
+                    ? `Accessible via your ${unlockLabel} — not your passport alone. This is a visa unlock.`
+                    : `Your passport grants you ${accessLabel.toLowerCase()} entry to ${name}.`}
+                </div>
+              </div>
+              {access.days && (
+                <div className="detail-entry-days">
+                  <div className="detail-entry-days-num">{access.days}</div>
+                  <div className="detail-entry-days-label">days max stay</div>
+                </div>
+              )}
+            </div>
+            <div className="detail-meta">
+              <div className="detail-meta-item">
+                <div className="detail-meta-key">Currency</div>
+                <div className="detail-meta-val">{currency}</div>
+              </div>
+              <div className="detail-meta-item">
+                <div className="detail-meta-key">Language</div>
+                <div className="detail-meta-val">{language}</div>
+              </div>
+              <div className="detail-meta-item">
+                <div className="detail-meta-key">Entry method</div>
+                <div className="detail-meta-val">{isSurprising ? `Via ${unlockLabel}` : 'Passport'}</div>
+              </div>
+              <div className="detail-meta-item">
+                <div className="detail-meta-key">Access type</div>
+                <div className="detail-meta-val">{accessLabel}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Entry note */}
+        <div className="detail-section">
+          <div className="detail-section-title">Entry requirements</div>
+          <div className="detail-note">{entryNote}</div>
+        </div>
+
+        {/* Highlights */}
+        <div className="detail-section">
+          <div className="detail-section-title">Not to be missed</div>
+          <div className="detail-highlights">
+            {highlights.map(h => <span key={h} className="detail-highlight">{h}</span>)}
+          </div>
+        </div>
+
+        {/* Disclaimer */}
+        <div className="detail-section">
+          <div className="detail-disclaimer">
+            <strong style={{color:'var(--accent2)'}}>Disclaimer:</strong> Visa policies change frequently. This information is provided for general guidance only and may not reflect the latest regulations. Always verify entry requirements with the official embassy or consulate of your destination before travelling. WhereToNext is not liable for any travel disruptions.
+          </div>
+        </div>
+
+        <div className="detail-cta">
+          <button className="detail-cta-btn" onClick={() => window.open('https://www.google.com/flights', '_blank')}>
+            See Flights
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M4 8h8M9 5l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+          <button className="detail-cta-sec" onClick={onBack}>← Back to results</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── APP ───────────────────────────────────────────────────────────────
+function App() {
+  const savedProfile = loadState('profile', null);
+  const [page, setPage]       = useState(loadState('page', 'home'));
+  const [profile, setProfile] = useState(savedProfile);
+  const [selected, setSelected] = useState(null);
+  const [tweaksVisible, setTweaksVisible] = useState(false);
+
+  useEffect(() => { saveState('page', page); }, [page]);
+
+  // Tweaks toggle via parent postMessage
+  useEffect(() => {
+    window.addEventListener('message', e => {
+      if (e.data?.type === '__activate_edit_mode')   setTweaksVisible(true);
+      if (e.data?.type === '__deactivate_edit_mode') setTweaksVisible(false);
+    });
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+  }, []);
+
+  useEffect(() => {
+    const panel = document.getElementById('tweaks-results');
+    if (panel) panel.classList.toggle('visible', tweaksVisible && page === 'results');
+  }, [tweaksVisible, page]);
+
+  function handleSubmit(data) {
+    setProfile(data);
+    setPage('results');
+    window.scrollTo(0, 0);
+  }
+
+  function handleDetail(dest) {
+    setSelected(dest);
+    setPage('detail');
+    window.scrollTo(0, 0);
+  }
+
+  return (
+    <>
+      <Nav
+        page={page}
+        onHome={() => { setPage('home'); window.scrollTo(0,0); }}
+        onEdit={()  => { setPage('input'); window.scrollTo(0,0); }}
+      />
+      {page === 'home'    && <HomePage onStart={() => { setPage('input'); window.scrollTo(0,0); }}/>}
+      {page === 'input'   && <InputPage initial={profile} onSubmit={handleSubmit}/>}
+      {page === 'results' && profile && <ResultsPage profile={profile} onEdit={() => { setPage('input'); window.scrollTo(0,0); }} onDetail={handleDetail}/>}
+      {page === 'detail'  && selected && profile && <DetailPage dest={selected} profile={profile} onBack={() => { setPage('results'); window.scrollTo(0,0); }}/>}
+    </>
+  );
+}
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{"cardStyle":"default"}/*EDITMODE-END*/;
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WhereToNext — Mobile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<style>
+body { margin: 0; background: oklch(0.14 0.008 245); font-family: 'DM Sans', system-ui, sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.stage { position: relative; }
+::-webkit-scrollbar { width: 0; }
+/* Override iOS frame internal scroll indicators */
+.mobile-app ::-webkit-scrollbar { display: none; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+// ─── DATA (compact inline) ───────────────────────────────────────────
+const PASSPORTS = [
+  {code:'DE',name:'Germany',flag:'🇩🇪',tier:1},{code:'FR',name:'France',flag:'🇫🇷',tier:1},
+  {code:'IT',name:'Italy',flag:'🇮🇹',tier:1},{code:'ES',name:'Spain',flag:'🇪🇸',tier:1},
+  {code:'JP',name:'Japan',flag:'🇯🇵',tier:1},{code:'SG',name:'Singapore',flag:'🇸🇬',tier:1},
+  {code:'AU',name:'Australia',flag:'🇦🇺',tier:1},{code:'CA',name:'Canada',flag:'🇨🇦',tier:1},
+  {code:'NL',name:'Netherlands',flag:'🇳🇱',tier:1},{code:'KR',name:'South Korea',flag:'🇰🇷',tier:1},
+  {code:'US',name:'United States',flag:'🇺🇸',tier:2},{code:'GB',name:'United Kingdom',flag:'🇬🇧',tier:2},
+  {code:'BR',name:'Brazil',flag:'🇧🇷',tier:2},{code:'MX',name:'Mexico',flag:'🇲🇽',tier:3},
+  {code:'TR',name:'Turkey',flag:'🇹🇷',tier:3},{code:'ZA',name:'South Africa',flag:'🇿🇦',tier:3},
+  {code:'TH',name:'Thailand',flag:'🇹🇭',tier:3},{code:'IN',name:'India',flag:'🇮🇳',tier:4},
+  {code:'CN',name:'China',flag:'🇨🇳',tier:4},{code:'PK',name:'Pakistan',flag:'🇵🇰',tier:4},
+  {code:'NG',name:'Nigeria',flag:'🇳🇬',tier:4},{code:'PH',name:'Philippines',flag:'🇵🇭',tier:4},
+  {code:'BD',name:'Bangladesh',flag:'🇧🇩',tier:4},
+];
+
+const VISAS = [
+  {code:'schengen',name:'Schengen Visa / Residence',short:'Schengen'},
+  {code:'us',name:'US B1/B2 Visa',short:'US Visa'},
+  {code:'uk',name:'UK Visitor Visa',short:'UK Visa'},
+  {code:'ca',name:'Canadian Visa',short:'Canada Visa'},
+  {code:'ae',name:'UAE Residence',short:'UAE Residence'},
+];
+
+const RESIDENCE = [
+  {code:'DE',name:'Germany',schengen:true},{code:'FR',name:'France',schengen:true},
+  {code:'NL',name:'Netherlands',schengen:true},{code:'ES',name:'Spain',schengen:true},
+  {code:'IT',name:'Italy',schengen:true},{code:'PT',name:'Portugal',schengen:true},
+  {code:'US',name:'United States'},{code:'GB',name:'United Kingdom'},
+  {code:'CA',name:'Canada'},{code:'AU',name:'Australia'},{code:'AE',name:'UAE'},
+  {code:'SG',name:'Singapore'},{code:'JP',name:'Japan'},{code:'IN',name:'India'},
+];
+
+// x,y on 320x180 world grid + data
+const VF=(d)=>({type:'vf',days:d});const VOA=(d)=>({type:'voa',days:d});
+const EV=(d)=>({type:'ev',days:d});const VR=()=>({type:'vr',days:null});
+
+const DEST = [
+  // code, name, flag, region, x, y, gradient, accent, tagline, tiers, unlocks, unlockAccess, note, highlights, currency, language
+  {c:'MV',n:'Maldives',f:'🇲🇻',r:'Indian Ocean',x:212,y:104,g:['#042a4a','#061525'],a:'#22d3ee',tl:'Overwater paradise — open to everyone',ti:[VOA(30),VOA(30),VOA(30),VOA(30)],u:[],ua:null,nt:'All nationalities receive 30 days on arrival.',hl:['Malé Atoll','Baa Atoll','Addu'],cu:'MVR',la:'Dhivehi'},
+  {c:'GE',n:'Georgia',f:'🇬🇪',r:'Caucasus',x:189,y:70,g:['#2e1212','#180808'],a:'#f87171',tl:'365-day stays, zero paperwork',ti:[VF(365),VF(365),VF(365),VF(365)],u:[],ua:null,nt:'Georgia offers a remarkable 365-day visa-free stay for almost all nationalities.',hl:['Tbilisi','Kazbegi','Wine Country'],cu:'GEL',la:'Georgian'},
+  {c:'NP',n:'Nepal',f:'🇳🇵',r:'South Asia',x:216,y:88,g:['#1a2e18','#0d1a0c'],a:'#4ade80',tl:'Rooftop of the world',ti:[VOA(90),VOA(90),VOA(90),VOA(90)],u:[],ua:null,nt:'Visa on arrival at Tribhuvan International Airport.',hl:['Kathmandu','Annapurna','Everest BC'],cu:'NPR',la:'Nepali'},
+  {c:'KH',n:'Cambodia',f:'🇰🇭',r:'SE Asia',x:238,y:99,g:['#2e1e08','#180f04'],a:'#fbbf24',tl:'Ancient temples, open borders',ti:[EV(30),EV(30),EV(30),EV(30)],u:[],ua:null,nt:'e-Visa available for USD 36 at evisa.gov.kh.',hl:['Angkor Wat','Phnom Penh','Koh Rong'],cu:'KHR',la:'Khmer'},
+  {c:'RW',n:'Rwanda',f:'🇷🇼',r:'Africa',x:178,y:113,g:['#122e12','#081808'],a:'#86efac',tl:"Africa's rising star",ti:[EV(30),EV(30),EV(30),EV(30)],u:[],ua:null,nt:'e-Visa required for most. Apply at irembo.gov.rw.',hl:['Kigali','Volcanoes NP','Lake Kivu'],cu:'RWF',la:'Kinyarwanda'},
+  {c:'AM',n:'Armenia',f:'🇦🇲',r:'Caucasus',x:191,y:72,g:['#2a1228','#180a16'],a:'#e879f9',tl:'Ancient churches, warm welcome',ti:[VF(180),VF(180),VF(180),VF(180)],u:[],ua:null,nt:'Visa-free for almost all nationalities up to 180 days.',hl:['Yerevan','Lake Sevan','Tatev'],cu:'AMD',la:'Armenian'},
+  {c:'CO',n:'Colombia',f:'🇨🇴',r:'S America',x:72,y:108,g:['#2a2208','#160e02'],a:'#fde047',tl:'Magic realism made real',ti:[VF(90),VF(90),VF(90),VF(90)],u:[],ua:null,nt:'Most nationalities enter visa-free for 90 days.',hl:['Cartagena','Medellín','Bogotá'],cu:'COP',la:'Spanish'},
+  {c:'JO',n:'Jordan',f:'🇯🇴',r:'Middle East',x:183,y:80,g:['#2a1a08','#160d04'],a:'#fb923c',tl:'Petra, Wadi Rum, Dead Sea',ti:[VOA(30),VOA(30),VOA(30),VOA(30)],u:[],ua:null,nt:'Visa on Arrival at all major entry points.',hl:['Petra','Wadi Rum','Aqaba'],cu:'JOD',la:'Arabic'},
+  {c:'TZ',n:'Tanzania',f:'🇹🇿',r:'Africa',x:181,y:116,g:['#122a12','#081608'],a:'#4ade80',tl:'Serengeti, Kilimanjaro, Zanzibar',ti:[EV(90),EV(90),EV(90),EV(90)],u:[],ua:null,nt:'e-Visa at immigration.go.tz.',hl:['Serengeti','Kilimanjaro','Zanzibar'],cu:'TZS',la:'Swahili'},
+  // Visa-unlock destinations
+  {c:'AL',n:'Albania',f:'🇦🇱',r:'Europe',x:169,y:68,g:['#2e1010','#1a0808'],a:'#f87171',tl:"The Riviera's best-kept secret",ti:[VF(90),VF(90),VF(90),VR()],u:['schengen','us','uk'],ua:VF(90),nt:'Schengen, US, or UK visa holders may enter visa-free for 90 days.',hl:['Albanian Riviera','Berat','Tirana'],cu:'ALL',la:'Albanian'},
+  {c:'XK',n:'Kosovo',f:'🇽🇰',r:'Europe',x:170,y:68,g:['#10162e','#080d1a'],a:'#60a5fa',tl:"Europe's youngest nation",ti:[VF(90),VF(90),VR(),VR()],u:['schengen','us'],ua:VF(90),nt:'Schengen or US visa holders may enter visa-free for 90 days.',hl:['Pristina','Prizren','Rugova'],cu:'EUR',la:'Albanian'},
+  {c:'MK',n:'N. Macedonia',f:'🇲🇰',r:'Europe',x:171,y:69,g:['#2a2210','#161208'],a:'#fcd34d',tl:'Balkans without the crowds',ti:[VF(90),VF(90),VR(),VR()],u:['schengen','us'],ua:VF(90),nt:'Schengen or US visa holders enter visa-free for 90 days.',hl:['Ohrid','Skopje','Mavrovo'],cu:'MKD',la:'Macedonian'},
+  {c:'MD',n:'Moldova',f:'🇲🇩',r:'Europe',x:173,y:65,g:['#12221a','#081610'],a:'#34d399',tl:'Wine country off the map',ti:[VF(90),VF(90),VR(),VR()],u:['schengen'],ua:VF(90),nt:'Schengen visa/residence holders enter visa-free for 90 days.',hl:['Chișinău','Cricova','Transnistria'],cu:'MDL',la:'Romanian'},
+  {c:'BA',n:'Bosnia',f:'🇧🇦',r:'Europe',x:167,y:67,g:['#12181e','#080d14'],a:'#38bdf8',tl:'Ottoman soul, Adriatic spirit',ti:[VF(90),VF(90),VR(),VR()],u:['schengen','us','uk'],ua:VF(90),nt:'Schengen, US, or UK visa holders may enter visa-free.',hl:['Sarajevo','Mostar','Blagaj'],cu:'BAM',la:'Bosnian'},
+  {c:'MX',n:'Mexico',f:'🇲🇽',r:'Americas',x:50,y:85,g:['#1a2a10','#0e1a08'],a:'#a3e635',tl:'Pyramids, beaches, color',ti:[VF(180),VF(180),VF(90),VR()],u:['us','ca'],ua:VF(180),nt:'US or Canadian visa holders are exempt from Mexican visa.',hl:['Mexico City','Cancún','Oaxaca'],cu:'MXN',la:'Spanish'},
+  // Mainstream
+  {c:'TH',n:'Thailand',f:'🇹🇭',r:'SE Asia',x:236,y:97,g:['#102228','#081418'],a:'#22d3ee',tl:'The Land of Smiles',ti:[VF(60),VF(60),VF(30),VOA(15)],u:[],ua:null,nt:'Generous visa-free stays; duration varies by passport.',hl:['Bangkok','Chiang Mai','Koh Samui'],cu:'THB',la:'Thai'},
+  {c:'ID',n:'Indonesia',f:'🇮🇩',r:'SE Asia',x:245,y:118,g:['#2e1010','#1a0808'],a:'#fca5a5',tl:'17,000 islands of wonder',ti:[VF(30),VF(30),VOA(30),VOA(30)],u:[],ua:null,nt:'Many enter visa-free. VOA also at major airports.',hl:['Bali','Komodo','Raja Ampat'],cu:'IDR',la:'Indonesian'},
+  {c:'MA',n:'Morocco',f:'🇲🇦',r:'Africa',x:155,y:82,g:['#2a1010','#1a0808'],a:'#fb923c',tl:'Colors of the medina',ti:[VF(90),VF(90),VF(90),VR()],u:[],ua:null,nt:'Many nationalities enter visa-free.',hl:['Marrakech','Fes','Sahara'],cu:'MAD',la:'Arabic'},
+  {c:'ZA',n:'South Africa',f:'🇿🇦',r:'Africa',x:175,y:140,g:['#12221a','#081610'],a:'#4ade80',tl:'The Rainbow Nation',ti:[VF(30),VF(30),VF(30),VR()],u:[],ua:null,nt:'Many nationalities enter visa-free for 30 days.',hl:['Cape Town','Kruger','Garden Route'],cu:'ZAR',la:'English'},
+  {c:'JP',n:'Japan',f:'🇯🇵',r:'Asia',x:272,y:76,g:['#2a1022','#180814'],a:'#f9a8d4',tl:'Tradition meets future',ti:[VF(90),VF(90),VR(),VR()],u:[],ua:null,nt:'Visa exemption covers 70+ countries.',hl:['Tokyo','Kyoto','Osaka'],cu:'JPY',la:'Japanese'},
+  {c:'FR',n:'France',f:'🇫🇷',r:'Europe',x:162,y:68,g:['#101628','#080d18'],a:'#93c5fd',tl:'The Schengen gateway',ti:[VF(90),VF(90),VR(),VR()],u:[],ua:null,nt:'Part of the Schengen Area.',hl:['Paris','Riviera','Lyon'],cu:'EUR',la:'French'},
+  {c:'IT',n:'Italy',f:'🇮🇹',r:'Europe',x:166,y:70,g:['#122210','#0a1808'],a:'#86efac',tl:'La dolce vita',ti:[VF(90),VF(90),VR(),VR()],u:[],ua:null,nt:'Part of the Schengen Area.',hl:['Rome','Venice','Amalfi'],cu:'EUR',la:'Italian'},
+  {c:'PT',n:'Portugal',f:'🇵🇹',r:'Europe',x:155,y:72,g:['#101628','#060c18'],a:'#a78bfa',tl:"Europe's western frontier",ti:[VF(90),VF(90),VR(),VR()],u:[],ua:null,nt:'Part of the Schengen Area.',hl:['Lisbon','Porto','Azores'],cu:'EUR',la:'Portuguese'},
+  {c:'KE',n:'Kenya',f:'🇰🇪',r:'Africa',x:184,y:112,g:['#102210','#081608'],a:'#4ade80',tl:'The Great Migration',ti:[EV(90),EV(90),EV(90),EV(90)],u:[],ua:null,nt:'eTA required. Apply at etakenya.go.ke.',hl:['Masai Mara','Nairobi','Diani'],cu:'KES',la:'Swahili'},
+  {c:'AU',n:'Australia',f:'🇦🇺',r:'Oceania',x:265,y:148,g:['#12221a','#081610'],a:'#34d399',tl:"World's largest island",ti:[EV(90),EV(90),VR(),VR()],u:[],ua:null,nt:'Most Tier 1 use ETA. Others need a visa.',hl:['Sydney','Reef','Melbourne'],cu:'AUD',la:'English'},
+  {c:'BR',n:'Brazil',f:'🇧🇷',r:'S America',x:82,y:125,g:['#122210','#0a1808'],a:'#4ade80',tl:'Carnival, Amazon, Copacabana',ti:[VF(90),VF(90),VF(90),VR()],u:[],ua:null,nt:'Visa-free for many nationalities up to 90 days.',hl:['Rio','São Paulo','Salvador'],cu:'BRL',la:'Portuguese'},
+];
+
+const SCHENGEN = new Set(['AT','BE','CZ','DK','EE','FI','FR','DE','GR','HU','IS','IT','LV','LT','LU','MT','NL','NO','PL','PT','SK','SI','ES','SE','CH']);
+
+// expired? expiry is YYYY-MM-DD or null. null = no expiry / treat as valid
+const isExpired = (expiry) => {
+  if (!expiry) return false;
+  const d = new Date(expiry + 'T00:00:00');
+  return d.getTime() < Date.now();
+};
+
+function computeAccess(passports, residence, residenceExpiry, visas) {
+  // passports: string[] of codes
+  // visas: [{code, expiry}]
+  const tiers = (passports || []).map(p => PASSPORTS.find(x=>x.code===p)?.tier || 4);
+  const bestTier = tiers.length ? Math.min(...tiers) : 4;
+
+  // effective visa set, honouring expiry
+  const eff = new Set();
+  (visas || []).forEach(v => { if (!isExpired(v.expiry)) eff.add(v.code); });
+  if (residence && !isExpired(residenceExpiry)) {
+    const r = RESIDENCE.find(x=>x.code===residence);
+    if (r?.schengen || SCHENGEN.has(residence)) eff.add('schengen');
+    if (residence==='US') eff.add('us');
+    if (residence==='GB') eff.add('uk');
+    if (residence==='CA') eff.add('ca');
+    if (residence==='AE') eff.add('ae');
+  }
+
+  // rank access: vf best, then voa/ev, then vr; longer days wins within type
+  const rank = (a) => {
+    if (!a || a.type==='vr') return -1;
+    const base = a.type==='vf' ? 3000 : a.type==='voa' ? 2000 : a.type==='ev' ? 1000 : 0;
+    return base + (a.days || 0);
+  };
+
+  return DEST.map(d => {
+    if (passports && passports.includes(d.c)) return null;
+
+    // pick best passport tier result for this destination
+    let bestAccess = null;
+    let bestPassport = null;
+    (passports && passports.length ? passports : [null]).forEach(pc => {
+      const t = PASSPORTS.find(x=>x.code===pc)?.tier || 4;
+      const ta = d.ti[t-1];
+      if (rank(ta) > rank(bestAccess)) { bestAccess = ta; bestPassport = pc; }
+    });
+
+    const via = d.u.find(v => eff.has(v));
+    if (bestAccess && bestAccess.type !== 'vr') {
+      return {...d, access: bestAccess, surprise: false, viaPassport: bestPassport};
+    }
+    if (via && d.ua) return {...d, access: d.ua, surprise: true, via};
+    return {...d, access: VR(), surprise: false, blocked: true};
+  }).filter(Boolean);
+}
+
+// ─── COLORS ──────────────────────────────────────────────────────────
+const C = {
+  bg: '#0a0c10',
+  bg2: '#13171e',
+  bg3: '#1b2029',
+  bg4: '#242a35',
+  line: '#2a313d',
+  line2: '#353d4b',
+  txt: '#f0f2f5',
+  txt2: '#8a92a3',
+  txt3: '#555c6b',
+  accent: '#22d3ee',
+  accent2: '#facc15',
+  vf: '#4ade80',
+  voa: '#facc15',
+  ev: '#a78bfa',
+  vr: '#ef4444',
+  surprise: '#22d3ee',
+};
+const BADGE = { vf:{bg:'rgba(74,222,128,.16)',fg:C.vf,l:'Visa-Free'},
+  voa:{bg:'rgba(250,204,21,.16)',fg:C.voa,l:'Visa on Arrival'},
+  ev:{bg:'rgba(167,139,250,.16)',fg:C.ev,l:'e-Visa'},
+  vr:{bg:'rgba(239,68,68,.14)',fg:C.vr,l:'Visa Required'} };
+
+// ─── PERSISTENCE ─────────────────────────────────────────────────────
+const ls = (k, d) => { try { return JSON.parse(localStorage.getItem('wtnm_'+k)) ?? d; } catch { return d; } };
+const ss = (k, v) => { try { localStorage.setItem('wtnm_'+k, JSON.stringify(v)); } catch {} };
+
+const fmtDate = (s) => {
+  if (!s) return '';
+  const d = new Date(s + 'T00:00:00');
+  return d.toLocaleDateString('en-US', {month: 'short', year: 'numeric'});
+};
+
+// ─── SEARCH SELECT (mobile) ──────────────────────────────────────────
+function MSelect({ options, value, onChange, placeholder, dark = true }) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState('');
+  const sel = options.find(o => o.code === value);
+  const filt = options.filter(o => o.name.toLowerCase().includes(q.toLowerCase()));
+
+  return (
+    <>
+      <div onClick={() => setOpen(true)} style={{
+        height: 52, borderRadius: 14, background: C.bg3, border: `1px solid ${C.line}`,
+        padding: '0 16px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer',
+      }}>
+        <span style={{fontSize: 22}}>{sel?.flag || '🌐'}</span>
+        <span style={{fontSize: 15, color: sel ? C.txt : C.txt3, flex: 1}}>
+          {sel?.name || placeholder}
+        </span>
+        <svg width="14" height="14" viewBox="0 0 14 14"><path d="M3 5l4 4 4-4" stroke={C.txt2} strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </div>
+      {open && (
+        <div style={{
+          position: 'absolute', inset: 0, background: 'rgba(0,0,0,.6)', zIndex: 200,
+          display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+        }} onClick={() => setOpen(false)}>
+          <div style={{
+            background: C.bg2, borderTopLeftRadius: 24, borderTopRightRadius: 24,
+            padding: '20px 0 32px', maxHeight: '72%', display: 'flex', flexDirection: 'column',
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{width: 38, height: 4, background: C.line2, borderRadius: 2, margin: '0 auto 16px'}}/>
+            <div style={{padding: '0 20px 12px'}}>
+              <input autoFocus value={q} onChange={e=>setQ(e.target.value)}
+                placeholder="Search…"
+                style={{
+                  width: '100%', height: 44, borderRadius: 12, background: C.bg3,
+                  border: `1px solid ${C.line}`, padding: '0 14px', fontSize: 15,
+                  color: C.txt, outline: 'none', fontFamily: 'inherit',
+                }}/>
+            </div>
+            <div style={{overflowY: 'auto', flex: 1}}>
+              {filt.map(o => (
+                <div key={o.code} onClick={() => { onChange(o.code); setOpen(false); setQ(''); }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '14px 20px',
+                    background: o.code === value ? C.bg3 : 'transparent',
+                  }}>
+                  <span style={{fontSize: 22}}>{o.flag || '🌐'}</span>
+                  <span style={{fontSize: 16, color: C.txt}}>{o.name}</span>
+                </div>
+              ))}
+              {filt.length === 0 && <div style={{padding: 20, color: C.txt3, textAlign: 'center'}}>No results</div>}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ─── SPLASH ──────────────────────────────────────────────────────────
+// ─── ANIMATED GLOBE ──────────────────────────────────────────────────
+// Stylised rotating globe with latitude/longitude graticule, landmass dots,
+// a plane that orbits, and optional destination markers that light up.
+// Props: size (px), zoom (1 = normal), rotateSpeed (deg/sec), markers (array
+// of {lon, lat, label, emoji}), activeMarkerIdx (number|null), showPlane
+function Globe({ size = 220, zoom = 1, rotateSpeed = 14, markers = [], activeMarkerIdx = null, showPlane = true, glow = true }) {
+  const [angle, setAngle] = useState(0);
+  const rafRef = useRef(0);
+  const lastRef = useRef(performance.now());
+
+  useEffect(() => {
+    const tick = (now) => {
+      const dt = (now - lastRef.current) / 1000;
+      lastRef.current = now;
+      setAngle(a => (a + rotateSpeed * dt) % 360);
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [rotateSpeed]);
+
+  // project (lon, lat) where lon ∈ [-180,180], lat ∈ [-90,90] onto 2D
+  // uses orthographic projection with current rotation about Y axis
+  // returns {x, y, visible}
+  const R = 100; // virtual radius in viewBox units
+  const project = (lon, lat) => {
+    const λ = ((lon + angle) * Math.PI) / 180;
+    const φ = (lat * Math.PI) / 180;
+    const x = R * Math.cos(φ) * Math.sin(λ);
+    const y = -R * Math.sin(φ);
+    const z = R * Math.cos(φ) * Math.cos(λ);
+    return { x, y, visible: z > 0, z };
+  };
+
+  // landmass dots — rough outlines stored as (lon, lat) tuples
+  const LAND = [
+    // Europe
+    ...gridPts(-10, 40, 40, 70, 6),
+    // Africa
+    ...gridPts(-15, -35, 50, 35, 7),
+    // Asia
+    ...gridPts(55, 10, 145, 70, 10),
+    // SE Asia + Indonesia
+    ...gridPts(95, -10, 140, 10, 5),
+    // Australia
+    ...gridPts(115, -38, 150, -12, 5),
+    // N America
+    ...gridPts(-165, 25, -60, 70, 9),
+    // C America
+    ...gridPts(-110, 10, -75, 30, 4),
+    // S America
+    ...gridPts(-80, -55, -35, 12, 7),
+    // Arctic caps
+    ...gridPts(-180, 70, 180, 80, 8),
+  ];
+
+  // latitude and longitude meridians
+  const meridians = [];
+  for (let lon = -180; lon < 180; lon += 30) meridians.push(lon);
+  const parallels = [-60, -30, 0, 30, 60];
+
+  // plane orbits at a tilted inclination — position based on its own angle
+  const [planeAngle, setPlaneAngle] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setPlaneAngle(a => (a + 2) % 360), 40);
+    return () => clearInterval(id);
+  }, []);
+  const planePath = () => {
+    // orbit radius slightly larger than globe
+    const r = R * 1.12;
+    const tilt = 25 * Math.PI / 180;
+    const a = (planeAngle * Math.PI) / 180;
+    const x = r * Math.cos(a);
+    const y = r * Math.sin(a) * Math.sin(tilt) - r * 0.15;
+    const z = r * Math.sin(a) * Math.cos(tilt);
+    const rot = -planeAngle + 90;
+    return { x, y, visible: z > 0, rot };
+  };
+  const plane = planePath();
+
+  return (
+    <div style={{
+      width: size, height: size, position: 'relative',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      {glow && (
+        <div style={{
+          position: 'absolute', inset: -size * 0.2,
+          background: `radial-gradient(circle, ${C.accent}22 0%, ${C.accent}08 40%, transparent 70%)`,
+          pointerEvents: 'none',
+        }}/>
+      )}
+      <svg viewBox="-130 -130 260 260" style={{width: '100%', height: '100%', overflow: 'visible'}}>
+        <defs>
+          <radialGradient id="globeGrad" cx="35%" cy="30%">
+            <stop offset="0%" stopColor="#1e2a3f"/>
+            <stop offset="60%" stopColor="#0d1320"/>
+            <stop offset="100%" stopColor="#05080f"/>
+          </radialGradient>
+          <radialGradient id="globeRim" cx="50%" cy="50%" r="50%">
+            <stop offset="85%" stopColor="transparent"/>
+            <stop offset="100%" stopColor={C.accent} stopOpacity=".5"/>
+          </radialGradient>
+        </defs>
+        {/* sphere */}
+        <circle cx="0" cy="0" r={R * zoom} fill="url(#globeGrad)"/>
+        {/* graticule (parallels) */}
+        {parallels.map(lat => {
+          const ry = R * Math.cos(lat * Math.PI / 180) * zoom;
+          const cy = -R * Math.sin(lat * Math.PI / 180) * zoom;
+          return <ellipse key={'p'+lat} cx="0" cy={cy} rx={ry} ry={ry * 0.18} fill="none" stroke={C.line2} strokeWidth=".4" opacity=".5"/>;
+        })}
+        {/* graticule (meridians) — as projected arcs */}
+        {meridians.map(lon => {
+          const pts = [];
+          for (let lat = -90; lat <= 90; lat += 6) {
+            const p = project(lon, lat);
+            if (p.visible) pts.push(`${p.x * zoom},${p.y * zoom}`);
+          }
+          return pts.length > 1 ? <polyline key={'m'+lon} points={pts.join(' ')} fill="none" stroke={C.line2} strokeWidth=".4" opacity=".4"/> : null;
+        })}
+        {/* landmass dots */}
+        {LAND.map((pt, i) => {
+          const p = project(pt[0], pt[1]);
+          if (!p.visible) return null;
+          return <circle key={i} cx={p.x * zoom} cy={p.y * zoom} r={1.2 * zoom} fill={C.txt2} opacity={0.55 * (0.3 + 0.7 * (p.z / R))}/>;
+        })}
+        {/* markers (destinations) */}
+        {markers.map((m, i) => {
+          const p = project(m.lon, m.lat);
+          if (!p.visible) return null;
+          const active = i === activeMarkerIdx;
+          return (
+            <g key={i}>
+              {active && <circle cx={p.x * zoom} cy={p.y * zoom} r="8" fill={C.accent} opacity=".18">
+                <animate attributeName="r" values="5;14;5" dur="1.6s" repeatCount="indefinite"/>
+                <animate attributeName="opacity" values=".35;0;.35" dur="1.6s" repeatCount="indefinite"/>
+              </circle>}
+              <circle cx={p.x * zoom} cy={p.y * zoom} r={active ? 3 : 2} fill={active ? C.accent : C.accent2}/>
+              {active && <circle cx={p.x * zoom} cy={p.y * zoom} r="1.2" fill="#fff"/>}
+            </g>
+          );
+        })}
+        {/* atmosphere rim */}
+        <circle cx="0" cy="0" r={R * zoom} fill="url(#globeRim)"/>
+        {/* plane */}
+        {showPlane && plane.visible && (
+          <g transform={`translate(${plane.x} ${plane.y}) rotate(${plane.rot})`}>
+            {/* vapor trail */}
+            <path d="M -18 0 L -4 0" stroke={C.accent} strokeWidth="1" strokeLinecap="round" opacity=".5"/>
+            <path d="M -12 0 L -4 0" stroke="#fff" strokeWidth="1.2" strokeLinecap="round"/>
+            {/* plane silhouette */}
+            <path d="M 6 0 L -4 2.5 L -2 0 L -4 -2.5 Z" fill="#fff"/>
+            <path d="M -2 -3 L 0 -1 L 1 -1 L -1 -3 Z" fill="#fff"/>
+            <path d="M -2 3 L 0 1 L 1 1 L -1 3 Z" fill="#fff"/>
+          </g>
+        )}
+      </svg>
+    </div>
+  );
+}
+// helper: evenly-spaced lon/lat grid points in a box (for landmass cloud)
+function gridPts(lon0, lat0, lon1, lat1, density) {
+  const out = [];
+  const lonStep = (lon1 - lon0) / density;
+  const latStep = (lat1 - lat0) / Math.max(1, Math.round(density * (lat1 - lat0) / (lon1 - lon0)));
+  for (let lon = lon0; lon <= lon1; lon += lonStep) {
+    for (let lat = lat0; lat <= lat1; lat += latStep) {
+      // drop a few points randomly to make it organic
+      if (((lon * 13 + lat * 7) | 0) % 5 !== 0) out.push([lon, lat]);
+    }
+  }
+  return out;
+}
+
+// ─── SPLASH (loading screen with plane circling globe) ───────────────
+function Splash({ onNext }) {
+  useEffect(() => { const t = setTimeout(onNext, 2400); return () => clearTimeout(t); }, []);
+  return (
+    <div style={{
+      height: '100%', background: `radial-gradient(ellipse at 50% 40%, #0f1522 0%, ${C.bg} 70%)`,
+      color: C.txt,
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      gap: 40, paddingBottom: 60, position: 'relative', overflow: 'hidden',
+    }}>
+      {/* stars */}
+      <div style={{position: 'absolute', inset: 0, pointerEvents: 'none', opacity: .6}}>
+        {Array.from({length: 40}).map((_,i) => {
+          const x = (i * 97) % 100, y = (i * 53) % 100, s = (i % 3) + 1;
+          return <div key={i} style={{position:'absolute', left: x+'%', top: y+'%', width: s, height: s, background:'#fff', borderRadius:'50%', opacity: .3 + (i % 5) * .12}}/>;
+        })}
+      </div>
+
+      <Globe size={260} zoom={1} rotateSpeed={20} showPlane={true}/>
+
+      <div style={{textAlign: 'center', zIndex: 2}}>
+        <div style={{fontFamily: 'Cormorant Garamond, serif', fontSize: 36, fontWeight: 300}}>
+          WhereTo<em style={{fontStyle: 'italic', color: C.accent}}>Next</em>
+        </div>
+        <div style={{fontSize: 12, color: C.txt3, letterSpacing: 3, textTransform: 'uppercase', marginTop: 8}}>Passport intelligence</div>
+        <div style={{marginTop: 20, display: 'flex', gap: 6, justifyContent: 'center'}}>
+          {[0,1,2].map(i => <div key={i} style={{width: 6, height: 6, borderRadius: '50%', background: C.accent, animation: `dot 1.2s ease-in-out ${i * 0.2}s infinite`}}/>)}
+        </div>
+      </div>
+      <style>{`@keyframes dot{0%,100%{opacity:.2;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}`}</style>
+    </div>
+  );
+}
+
+// ─── ONBOARDING (post-download landing) ──────────────────────────────
+// Animated globe spins, plane lands on interesting places. Zooms in
+// progressively across the three slides.
+const TOUR_MARKERS = [
+  { lon: 73.5, lat: 4, label: 'Maldives', emoji: '🇲🇻', blurb: 'Overwater paradise — open to all passports.' },
+  { lon: 44.8, lat: 41.7, label: 'Georgia', emoji: '🇬🇪', blurb: '365-day stay for almost everyone.' },
+  { lon: 19.8, lat: 41.3, label: 'Albania', emoji: '🇦🇱', blurb: 'Unlocked by a Schengen visa — a surprise find.' },
+  { lon: 103.85, lat: 1.35, label: 'Singapore', emoji: '🇸🇬', blurb: 'Gateway to Southeast Asia.' },
+  { lon: 37.9, lat: -1.3, label: 'Kenya', emoji: '🇰🇪', blurb: 'Great Migration, simple eTA.' },
+  { lon: -99.1, lat: 19.4, label: 'Mexico', emoji: '🇲🇽', blurb: 'Open with a US or Canadian visa.' },
+];
+
+function Onboarding({ onNext }) {
+  const [i, setI] = useState(0);
+  const [tourIdx, setTourIdx] = useState(0);
+
+  // Cycle through tour markers every ~1.8s (the plane "lands" on each)
+  useEffect(() => {
+    const id = setInterval(() => setTourIdx(x => (x + 1) % TOUR_MARKERS.length), 1800);
+    return () => clearInterval(id);
+  }, []);
+
+  const slides = [
+    { title: 'Unlock your\nfull itinerary', sub: 'See every country your passport, residence and visas make accessible — not just the obvious ones.' },
+    { title: 'Find surprising\ndestinations', sub: "A Schengen residence permit can open a dozen countries you didn't know you could visit visa-free." },
+    { title: 'One tap,\nall borders', sub: 'An interactive world map, colour-coded by access type, with current entry requirements.' },
+  ];
+  const s = slides[i];
+  // zoom progression: starts zoomed out, zooms in as user advances
+  const zoom = [1, 1.18, 1.4][i];
+  const rot = [18, 10, 5][i];
+  const m = TOUR_MARKERS[tourIdx];
+
+  return (
+    <div style={{
+      height: '100%', background: `radial-gradient(ellipse at 50% 20%, #0f1522 0%, ${C.bg} 65%)`,
+      color: C.txt, display: 'flex', flexDirection: 'column', padding: '52px 24px 28px', position: 'relative', overflow: 'hidden',
+    }}>
+      {/* Stars */}
+      <div style={{position: 'absolute', inset: 0, pointerEvents: 'none', opacity: .5}}>
+        {Array.from({length: 30}).map((_,k) => {
+          const x = (k * 101) % 100, y = (k * 47) % 100, sz = (k % 3) + 1;
+          return <div key={k} style={{position:'absolute', left: x+'%', top: y+'%', width: sz, height: sz, background:'#fff', borderRadius:'50%', opacity: .3 + (k % 5) * .1}}/>;
+        })}
+      </div>
+
+      {/* Globe */}
+      <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: 230, position: 'relative', zIndex: 2}}>
+        <Globe size={210} zoom={zoom} rotateSpeed={rot} markers={TOUR_MARKERS} activeMarkerIdx={tourIdx} showPlane={true}/>
+      </div>
+
+      {/* Destination callout — updates as plane lands */}
+      <div style={{textAlign: 'center', minHeight: 30, marginTop: 2, zIndex: 2}}>
+        <div key={tourIdx} style={{
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          background: 'rgba(34,211,238,.08)', border: `1px solid ${C.accent}44`,
+          borderRadius: 100, padding: '5px 14px', fontSize: 12,
+          animation: 'fadeSlide .5s ease-out',
+        }}>
+          <span style={{fontSize: 14}}>{m.emoji}</span>
+          <span style={{color: C.txt, fontWeight: 500}}>{m.label}</span>
+          <span style={{color: C.txt3, marginLeft: 4}}>· {m.blurb}</span>
+        </div>
+      </div>
+
+      {/* Text */}
+      <div style={{textAlign: 'center', marginTop: 12, zIndex: 2}}>
+        <h1 style={{
+          fontFamily: 'Cormorant Garamond, serif', fontSize: 28, fontWeight: 300,
+          lineHeight: 1.15, whiteSpace: 'pre-line', margin: '0 0 10px',
+        }}>{s.title}</h1>
+        <p style={{fontSize: 13, color: C.txt2, lineHeight: 1.5, maxWidth: 300, margin: '0 auto'}}>{s.sub}</p>
+      </div>
+
+      {/* Progress dots */}
+      <div style={{display: 'flex', gap: 8, justifyContent: 'center', margin: '14px 0 12px', zIndex: 2}}>
+        {slides.map((_, idx) => (
+          <div key={idx} style={{
+            width: idx === i ? 20 : 6, height: 6, borderRadius: 3,
+            background: idx === i ? C.accent : C.line2, transition: 'all .25s',
+          }}/>
+        ))}
+      </div>
+
+      <button onClick={() => i < slides.length - 1 ? setI(i+1) : onNext()} style={{
+        height: 54, borderRadius: 27, background: C.accent, color: '#000',
+        fontSize: 15, fontWeight: 600, border: 'none', fontFamily: 'inherit', cursor: 'pointer', zIndex: 2,
+      }}>
+        {i < slides.length - 1 ? 'Continue' : 'Get Started'}
+      </button>
+      {i < slides.length - 1 && (
+        <div onClick={onNext} style={{textAlign: 'center', marginTop: 12, color: C.txt3, fontSize: 14, cursor: 'pointer', zIndex: 2}}>Skip</div>
+      )}
+      <style>{`@keyframes fadeSlide{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}`}</style>
+    </div>
+  );
+}
+
+// ─── AUTH ────────────────────────────────────────────────────────────
+function Auth({ onNext }) {
+  return (
+    <div style={{
+      height: '100%', background: C.bg, color: C.txt,
+      display: 'flex', flexDirection: 'column', padding: '72px 28px 40px',
+    }}>
+      <div style={{flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 12}}>
+        <div style={{fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: C.accent, fontWeight: 500, marginBottom: 4}}>Welcome</div>
+        <h1 style={{fontFamily: 'Cormorant Garamond, serif', fontSize: 38, fontWeight: 300, lineHeight: 1.1, margin: 0}}>
+          Sign in to<br/><em style={{fontStyle: 'italic', color: C.accent}}>WhereToNext</em>
+        </h1>
+        <p style={{fontSize: 14, color: C.txt2, lineHeight: 1.6, marginTop: 12}}>
+          Save your travel profile, sync across devices, and get notified when visa policies change.
+        </p>
+      </div>
+      <div style={{display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24}}>
+        <button onClick={() => onNext('apple')} style={authBtn('#fff', '#000')}>
+          <svg width="16" height="19" viewBox="0 0 16 19" fill="currentColor"><path d="M12.5 10.3c0-2.5 2-3.7 2.1-3.8-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.8-1.6 0-3.1 1-4 2.4-1.7 3-.4 7.3 1.2 9.7.8 1.2 1.8 2.5 3 2.4 1.2-.1 1.7-.8 3.2-.8s1.9.8 3.2.8 2.1-1.2 2.9-2.4c.9-1.4 1.3-2.7 1.3-2.8-.1 0-2.5-1-2.5-3.7zM10 3c.7-.8 1.1-1.9 1-3.1-1 0-2.2.7-2.9 1.5-.6.7-1.2 1.9-1 3C8.1 4.5 9.3 3.8 10 3z"/></svg>
+          Continue with Apple
+        </button>
+        <button onClick={() => onNext('google')} style={authBtn('#fff', '#1f2937')}>
+          <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.6 9.2c0-.6-.1-1.2-.2-1.8H9v3.4h4.8c-.2 1.1-.8 2-1.8 2.6v2.2h2.9c1.7-1.6 2.7-3.9 2.7-6.4z"/><path fill="#34A853" d="M9 18c2.4 0 4.5-.8 6-2.2l-2.9-2.2c-.8.5-1.8.9-3.1.9-2.4 0-4.4-1.6-5.1-3.8H.9v2.3C2.4 15.9 5.5 18 9 18z"/><path fill="#FBBC05" d="M3.9 10.7c-.2-.5-.3-1.1-.3-1.7s.1-1.2.3-1.7V5H.9C.3 6.2 0 7.6 0 9s.3 2.8.9 4l3-2.3z"/><path fill="#EA4335" d="M9 3.6c1.3 0 2.6.5 3.5 1.4l2.6-2.6C13.5.9 11.4 0 9 0 5.5 0 2.4 2.1.9 5l3 2.3C4.6 5.2 6.6 3.6 9 3.6z"/></svg>
+          Continue with Google
+        </button>
+        <button onClick={() => onNext('email')} style={{...authBtn('transparent', '#fff'), border: `1px solid ${C.line2}`}}>
+          <svg width="18" height="14" viewBox="0 0 18 14" fill="none"><rect x="1" y="1" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M1 3l8 5 8-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+          Sign in with Email
+        </button>
+        <div style={{display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0'}}>
+          <div style={{flex: 1, height: 1, background: C.line}}/>
+          <span style={{fontSize: 12, color: C.txt3}}>or</span>
+          <div style={{flex: 1, height: 1, background: C.line}}/>
+        </div>
+        <button onClick={() => onNext('guest')} style={{height: 48, background: 'none', color: C.txt2, fontSize: 14, border: 'none', fontFamily: 'inherit', cursor: 'pointer'}}>
+          Continue as guest
+        </button>
+      </div>
+      <div style={{fontSize: 11, color: C.txt3, textAlign: 'center', lineHeight: 1.6}}>
+        By continuing, you agree to our <span style={{color: C.txt2}}>Terms of Service</span> and <span style={{color: C.txt2}}>Privacy Policy</span>.
+      </div>
+    </div>
+  );
+}
+const authBtn = (bg, fg) => ({
+  height: 52, borderRadius: 26, background: bg, color: fg, fontSize: 15, fontWeight: 600,
+  border: 'none', fontFamily: 'inherit', cursor: 'pointer',
+  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+});
+
+// ─── DATA ENTRY ──────────────────────────────────────────────────────
+function DataEntry({ onSubmit, initial }) {
+  // New schema: passports = string[], visas = [{code, expiry}], residenceExpiry = string|null
+  // Migrate from old shape if we got an old initial from localStorage.
+  const initPassports = initial?.passports ?? (initial?.passport ? [initial.passport] : []);
+  const initVisas = initial?.visas ?? [];
+  const normalizedVisas = Array.isArray(initVisas) && initVisas.length && typeof initVisas[0] === 'string'
+    ? initVisas.map(c => ({code: c, expiry: ''}))
+    : initVisas;
+
+  const [passports, setPassports] = useState(initPassports);
+  const [residence, setResidence] = useState(initial?.residence || '');
+  const [residenceExpiry, setResidenceExpiry] = useState(initial?.residenceExpiry || '');
+  const [visas, setVisas] = useState(normalizedVisas);
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  const toggleVisa = c => setVisas(v => {
+    const exists = v.find(x => x.code === c);
+    return exists ? v.filter(x => x.code !== c) : [...v, {code: c, expiry: ''}];
+  });
+  const setVisaExpiry = (c, e) => setVisas(v => v.map(x => x.code === c ? {...x, expiry: e} : x));
+  const removePassport = c => setPassports(p => p.filter(x => x !== c));
+  const addPassport = c => setPassports(p => p.includes(c) ? p : [...p, c]);
+
+  return (
+    <div style={{
+      height: '100%', background: C.bg, color: C.txt, position: 'relative',
+      display: 'flex', flexDirection: 'column', padding: '64px 24px 40px', overflowY: 'auto',
+    }}>
+      <div style={{fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: C.accent, fontWeight: 500, marginBottom: 6}}>Your profile</div>
+      <h1 style={{fontFamily: 'Cormorant Garamond, serif', fontSize: 30, fontWeight: 300, lineHeight: 1.15, margin: '0 0 28px'}}>
+        Your travel<br/><em style={{fontStyle: 'italic', color: C.txt2}}>documents</em>
+      </h1>
+
+      {/* Passports (multi) */}
+      <div style={{marginBottom: 8}}>
+        <div style={{fontSize: 12, fontWeight: 600, letterSpacing: .3, color: C.txt2, textTransform: 'uppercase'}}>Passport nationalities</div>
+        <div style={{fontSize: 11, color: C.txt3, marginTop: 3, letterSpacing: 0, lineHeight: 1.4}}>Required. Add multiple if you're a dual citizen.</div>
+      </div>
+
+      {/* selected passport chips */}
+      {passports.length > 0 && (
+        <div style={{display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10}}>
+          {passports.map(code => {
+            const p = PASSPORTS.find(x => x.code === code);
+            if (!p) return null;
+            return (
+              <div key={code} style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                background: 'rgba(34,211,238,.1)', border: `1px solid ${C.accent}55`,
+                borderRadius: 100, padding: '6px 8px 6px 10px',
+              }}>
+                <span style={{fontSize: 16}}>{p.flag}</span>
+                <span style={{fontSize: 13, color: C.txt, fontWeight: 500}}>{p.name}</span>
+                <div onClick={() => removePassport(code)} style={{
+                  width: 18, height: 18, borderRadius: '50%', background: 'rgba(0,0,0,.3)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', marginLeft: 2,
+                }}>
+                  <svg width="8" height="8" viewBox="0 0 8 8"><path d="M1 1l6 6M7 1L1 7" stroke={C.txt2} strokeWidth="1.5" strokeLinecap="round"/></svg>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div onClick={() => setPickerOpen(true)} style={{
+        height: 52, borderRadius: 14, background: C.bg3, border: `1px dashed ${C.line2}`,
+        padding: '0 16px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer',
+        color: C.txt2, fontSize: 14, whiteSpace: 'nowrap',
+      }}>
+        <span style={{fontSize: 18, lineHeight: 1}}>＋</span>
+        <span>{passports.length === 0 ? 'Add passport' : 'Add another passport'}</span>
+      </div>
+
+      {pickerOpen && (
+        <MSelectMulti
+          options={PASSPORTS.filter(p => !passports.includes(p.code))}
+          onPick={(code) => { addPassport(code); setPickerOpen(false); }}
+          onClose={() => setPickerOpen(false)}
+          placeholder="Search countries…"
+        />
+      )}
+
+      {/* Residence */}
+      <label style={{...labelStyle, marginTop: 24}}>
+        Country of residence
+        <span style={{color: C.txt3, fontWeight: 400, marginLeft: 6, textTransform: 'none', letterSpacing: 0}}>optional</span>
+      </label>
+      <MSelect options={RESIDENCE} value={residence} onChange={setResidence} placeholder="Where do you live?"/>
+      {residence && (
+        <div style={{marginTop: 10}}>
+          <div style={{fontSize: 11, color: C.txt3, marginBottom: 6, letterSpacing: .3, textTransform: 'uppercase'}}>Residence permit expires</div>
+          <DateField value={residenceExpiry} onChange={setResidenceExpiry} placeholder="Optional · leave blank if permanent"/>
+        </div>
+      )}
+      <div style={{fontSize: 12, color: C.txt3, marginTop: 8, lineHeight: 1.5}}>
+        Schengen, US or UK residence can unlock additional destinations.
+      </div>
+
+      <div style={{height: 1, background: C.line, margin: '28px 0 20px'}}/>
+
+      <label style={labelStyle}>
+        Existing visas or permits
+        <span style={{color: C.txt3, fontWeight: 400, marginLeft: 6, textTransform: 'none', letterSpacing: 0}}>optional</span>
+      </label>
+      <div style={{display: 'flex', flexDirection: 'column', gap: 8}}>
+        {VISAS.map(v => {
+          const visa = visas.find(x => x.code === v.code);
+          const sel = !!visa;
+          const expired = isExpired(visa?.expiry);
+          return (
+            <div key={v.code} style={{
+              borderRadius: 14,
+              background: sel ? 'rgba(34,211,238,.08)' : C.bg3,
+              border: `1px solid ${expired ? C.vr + '88' : sel ? C.accent : C.line}`,
+              overflow: 'hidden',
+            }}>
+              <div onClick={() => toggleVisa(v.code)} style={{
+                display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', cursor: 'pointer',
+              }}>
+                <div style={{
+                  width: 20, height: 20, borderRadius: 6, flexShrink: 0,
+                  background: sel ? C.accent : 'transparent',
+                  border: `1.5px solid ${sel ? C.accent : C.line2}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {sel && <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#000" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                </div>
+                <span style={{flex: 1, fontSize: 14, color: C.txt, fontWeight: 500}}>{v.name}</span>
+                {expired && <span style={{fontSize: 10, color: C.vr, fontWeight: 600, letterSpacing: .5, textTransform: 'uppercase'}}>Expired</span>}
+              </div>
+              {sel && (
+                <div style={{padding: '0 16px 14px', display: 'flex', flexDirection: 'column', gap: 6}}>
+                  <div style={{fontSize: 11, color: C.txt3, letterSpacing: .3, textTransform: 'uppercase'}}>Expires</div>
+                  <DateField value={visa.expiry} onChange={(e) => setVisaExpiry(v.code, e)} placeholder="Optional"/>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{height: 24}}/>
+      <button disabled={!passports.length} onClick={() => onSubmit({passports, residence, residenceExpiry, visas})} style={{
+        height: 54, borderRadius: 27, background: C.accent, color: '#000',
+        fontSize: 15, fontWeight: 600, border: 'none', fontFamily: 'inherit',
+        opacity: passports.length ? 1 : .4, cursor: passports.length ? 'pointer' : 'default',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+      }}>
+        Find My Destinations →
+      </button>
+    </div>
+  );
+}
+const labelStyle = { display: 'block', fontSize: 12, fontWeight: 600, letterSpacing: .3, color: C.txt2, marginBottom: 8, textTransform: 'uppercase' };
+
+// Bottom-sheet country picker — used for adding an additional passport
+function MSelectMulti({ options, onPick, onClose, placeholder }) {
+  const [q, setQ] = useState('');
+  const filt = options.filter(o => o.name.toLowerCase().includes(q.toLowerCase()));
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, background: 'rgba(0,0,0,.6)', zIndex: 200,
+      display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+    }} onClick={onClose}>
+      <div style={{
+        background: C.bg2, borderTopLeftRadius: 24, borderTopRightRadius: 24,
+        padding: '20px 0 32px', maxHeight: '72%', display: 'flex', flexDirection: 'column',
+      }} onClick={e => e.stopPropagation()}>
+        <div style={{width: 38, height: 4, background: C.line2, borderRadius: 2, margin: '0 auto 16px'}}/>
+        <div style={{padding: '0 20px 12px'}}>
+          <input autoFocus value={q} onChange={e=>setQ(e.target.value)} placeholder={placeholder || 'Search…'}
+            style={{
+              width: '100%', height: 44, borderRadius: 12, background: C.bg3,
+              border: `1px solid ${C.line}`, padding: '0 14px', fontSize: 15,
+              color: C.txt, outline: 'none', fontFamily: 'inherit',
+            }}/>
+        </div>
+        <div style={{overflowY: 'auto', flex: 1}}>
+          {filt.map(o => (
+            <div key={o.code} onClick={() => onPick(o.code)}
+              style={{display: 'flex', alignItems: 'center', gap: 12, padding: '14px 20px', cursor: 'pointer'}}>
+              <span style={{fontSize: 22}}>{o.flag || '🌐'}</span>
+              <span style={{fontSize: 16, color: C.txt}}>{o.name}</span>
+            </div>
+          ))}
+          {filt.length === 0 && <div style={{padding: 20, color: C.txt3, textAlign: 'center'}}>No results</div>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Styled date input (YYYY-MM-DD). Empty string = no expiry.
+function DateField({ value, onChange, placeholder }) {
+  const expired = isExpired(value);
+  return (
+    <div style={{position: 'relative'}}>
+      <input type="date" value={value || ''} onChange={e => onChange(e.target.value)}
+        style={{
+          width: '100%', height: 44, borderRadius: 10, background: C.bg3,
+          border: `1px solid ${expired ? C.vr + '88' : C.line}`,
+          padding: '0 12px', fontSize: 14, color: value ? C.txt : C.txt3,
+          outline: 'none', fontFamily: 'inherit', colorScheme: 'dark',
+          WebkitAppearance: 'none', appearance: 'none',
+        }}
+      />
+      {!value && (
+        <div style={{
+          position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
+          fontSize: 13, color: C.txt3, pointerEvents: 'none',
+        }}>{placeholder || 'Select a date'}</div>
+      )}
+    </div>
+  );
+}
+
+// ─── INTERACTIVE WORLD MAP ───────────────────────────────────────────
+// Background is a dot-pattern continent outline; countries are colored circles.
+function WorldMap({ profile, onDetail }) {
+  const [selected, setSelected] = useState(null);
+  const [filter, setFilter] = useState('all');
+  const results = computeAccess(profile.passports, profile.residence, profile.residenceExpiry, profile.visas);
+
+  function accessKey(d) {
+    if (d.blocked) return 'vr';
+    if (d.surprise) return 'surprise';
+    return d.access.type; // vf voa ev
+  }
+
+  const COL = { vf: C.vf, voa: C.voa, ev: C.ev, vr: C.vr, surprise: C.surprise };
+  const filtered = filter === 'all' ? results :
+    filter === 'surprise' ? results.filter(d => d.surprise) :
+    results.filter(d => accessKey(d) === filter);
+
+  // background continents as organic dot clusters
+  const bgDots = [];
+  // N America
+  for (let i=0;i<60;i++) bgDots.push([40+Math.random()*70, 60+Math.random()*50]);
+  // S America
+  for (let i=0;i<40;i++) bgDots.push([70+Math.random()*30, 110+Math.random()*50]);
+  // Europe
+  for (let i=0;i<30;i++) bgDots.push([150+Math.random()*35, 55+Math.random()*25]);
+  // Africa
+  for (let i=0;i<60;i++) bgDots.push([160+Math.random()*40, 85+Math.random()*60]);
+  // Middle East + W Asia
+  for (let i=0;i<25;i++) bgDots.push([190+Math.random()*20, 70+Math.random()*25]);
+  // Asia
+  for (let i=0;i<70;i++) bgDots.push([210+Math.random()*70, 60+Math.random()*50]);
+  // SE Asia
+  for (let i=0;i<30;i++) bgDots.push([235+Math.random()*25, 100+Math.random()*25]);
+  // Oceania
+  for (let i=0;i<25;i++) bgDots.push([250+Math.random()*30, 135+Math.random()*25]);
+
+  const stats = {
+    vf: results.filter(d=>!d.surprise && !d.blocked && d.access.type==='vf').length,
+    voa: results.filter(d=>!d.surprise && !d.blocked && (d.access.type==='voa'||d.access.type==='ev')).length,
+    surprise: results.filter(d=>d.surprise).length,
+    vr: results.filter(d=>d.blocked).length,
+  };
+
+  return (
+    <div style={{height: '100%', background: C.bg, color: C.txt, display: 'flex', flexDirection: 'column'}}>
+      <div style={{padding: '72px 20px 14px'}}>
+        <div style={{fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: C.txt3, fontWeight: 500, marginBottom: 4}}>World map</div>
+        <div style={{fontFamily: 'Cormorant Garamond, serif', fontSize: 28, fontWeight: 300}}>
+          Your <em style={{fontStyle: 'italic', color: C.accent}}>accessible</em> world
+        </div>
+      </div>
+
+      {/* Map */}
+      <div style={{padding: '0 16px', position: 'relative'}}>
+        <div style={{
+          background: C.bg2, borderRadius: 20, border: `1px solid ${C.line}`,
+          padding: 8, position: 'relative', overflow: 'hidden',
+        }}>
+          <svg viewBox="0 0 320 180" style={{width: '100%', display: 'block'}}>
+            {/* bg continent dots */}
+            {bgDots.map((p,i) => <circle key={i} cx={p[0]} cy={p[1]} r="0.8" fill={C.line2} opacity=".8"/>)}
+            {/* destination pins */}
+            {filtered.map(d => {
+              const k = accessKey(d);
+              const c = COL[k];
+              const isSel = selected?.c === d.c;
+              return (
+                <g key={d.c} style={{cursor: 'pointer'}} onClick={() => setSelected(d)}>
+                  {isSel && <circle cx={d.x} cy={d.y} r="8" fill={c} opacity=".25"/>}
+                  {d.surprise && <circle cx={d.x} cy={d.y} r="6" fill="none" stroke={c} strokeWidth="0.7" opacity=".6"/>}
+                  <circle cx={d.x} cy={d.y} r={isSel ? 3.5 : 2.7} fill={c}
+                    stroke={d.surprise ? C.bg2 : 'none'} strokeWidth={d.surprise ? 0.5 : 0}/>
+                </g>
+              );
+            })}
+          </svg>
+          {/* legend */}
+          <div style={{
+            position: 'absolute', top: 12, right: 12,
+            background: 'rgba(10,12,16,.7)', backdropFilter: 'blur(8px)',
+            borderRadius: 10, padding: '8px 10px', fontSize: 10,
+            display: 'flex', flexDirection: 'column', gap: 5,
+          }}>
+            <Legend c={C.vf} l="Visa-Free"/>
+            <Legend c={C.voa} l="VOA / e-Visa"/>
+            <Legend c={C.surprise} l="Surprise ✦" ring/>
+            <Legend c={C.vr} l="Visa Required"/>
+          </div>
+        </div>
+      </div>
+
+      {/* stats */}
+      <div style={{padding: '14px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8}}>
+        <Stat n={stats.vf} l="Visa-free" c={C.vf}/>
+        <Stat n={stats.voa} l="VOA/eVisa" c={C.voa}/>
+        <Stat n={stats.surprise} l="Surprise" c={C.surprise}/>
+        <Stat n={stats.vr} l="Required" c={C.vr}/>
+      </div>
+
+      {/* filter chips */}
+      <div style={{padding: '4px 16px 8px', display: 'flex', gap: 6, overflowX: 'auto'}}>
+        {[['all','All'],['vf','Visa-Free'],['voa','VOA'],['ev','e-Visa'],['surprise','✦ Surprise'],['vr','Required']].map(([k,l]) => (
+          <button key={k} onClick={()=>setFilter(k)} style={{
+            padding: '6px 14px', borderRadius: 100, fontSize: 12, fontWeight: 500,
+            background: filter===k ? 'rgba(34,211,238,.12)' : C.bg3,
+            color: filter===k ? C.accent : C.txt2,
+            border: `1px solid ${filter===k ? C.accent : C.line}`,
+            fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0,
+          }}>{l}</button>
+        ))}
+      </div>
+
+      {/* bottom sheet: selected country or scroll list */}
+      <div style={{flex: 1, overflowY: 'auto', padding: '4px 16px 80px'}}>
+        {selected ? (
+          <SelectedSheet d={selected} onClose={()=>setSelected(null)} onDetail={()=>onDetail(selected)}/>
+        ) : (
+          <div style={{display: 'flex', flexDirection: 'column', gap: 8}}>
+            <div style={{fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: C.txt3, fontWeight: 600, padding: '8px 0 4px'}}>
+              Tap a dot, or browse below
+            </div>
+            {filtered.slice(0, 20).map(d => <MiniRow key={d.c} d={d} onClick={()=>onDetail(d)}/>)}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+const Legend = ({c, l, ring}) => (
+  <div style={{display: 'flex', alignItems: 'center', gap: 6, color: C.txt2}}>
+    {ring
+      ? <div style={{width: 8, height: 8, borderRadius: '50%', border: `1px solid ${c}`, position: 'relative'}}><div style={{width: 4, height: 4, borderRadius: '50%', background: c, position: 'absolute', top: 1, left: 1}}/></div>
+      : <div style={{width: 8, height: 8, borderRadius: '50%', background: c}}/>}
+    <span>{l}</span>
+  </div>
+);
+const Stat = ({n, l, c}) => (
+  <div style={{background: C.bg2, borderRadius: 12, padding: '10px 8px', textAlign: 'center', border: `1px solid ${C.line}`}}>
+    <div style={{fontFamily: 'Cormorant Garamond, serif', fontSize: 24, fontWeight: 400, color: c, lineHeight: 1}}>{n}</div>
+    <div style={{fontSize: 10, color: C.txt3, marginTop: 3, letterSpacing: .3}}>{l}</div>
+  </div>
+);
+const SelectedSheet = ({d, onClose, onDetail}) => {
+  const k = d.blocked ? 'vr' : d.surprise ? null : d.access.type;
+  const badge = d.surprise ? {bg:'rgba(34,211,238,.18)',fg:C.surprise,l:'✦ Surprise Unlock'} : BADGE[k];
+  return (
+    <div style={{background: C.bg2, borderRadius: 16, border: `1px solid ${C.line}`, padding: 16, marginTop: 8}}>
+      <div style={{display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 10}}>
+        <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
+          <span style={{fontSize: 36}}>{d.f}</span>
+          <div>
+            <div style={{fontFamily: 'Cormorant Garamond, serif', fontSize: 22, fontWeight: 400, lineHeight: 1.1}}>{d.n}</div>
+            <div style={{fontSize: 11, color: C.txt3, letterSpacing: 1, textTransform: 'uppercase', marginTop: 2}}>{d.r}</div>
+          </div>
+        </div>
+        <button onClick={onClose} style={{background: 'none', color: C.txt3, fontSize: 20, border: 'none', cursor: 'pointer'}}>×</button>
+      </div>
+      <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12}}>
+        <span style={{
+          padding: '4px 10px', borderRadius: 100, fontSize: 11, fontWeight: 600,
+          background: badge.bg, color: badge.fg, letterSpacing: .5,
+        }}>{badge.l}</span>
+        {!d.blocked && d.access.days && <span style={{fontSize: 12, color: C.txt2}}>up to {d.access.days} days</span>}
+      </div>
+      {d.blocked ? (
+        <div style={{fontSize: 13, color: C.txt2, lineHeight: 1.6}}>Your current documents don't grant access. You'll need to apply for a visa at a consulate.</div>
+      ) : (
+        <div style={{fontSize: 13, color: C.txt2, lineHeight: 1.6}}>{d.nt}</div>
+      )}
+      {!d.blocked && (
+        <button onClick={onDetail} style={{
+          marginTop: 14, width: '100%', height: 44, borderRadius: 22,
+          background: C.accent, color: '#000', fontSize: 14, fontWeight: 600,
+          border: 'none', fontFamily: 'inherit', cursor: 'pointer',
+        }}>View Details →</button>
+      )}
+    </div>
+  );
+};
+const MiniRow = ({d, onClick}) => {
+  const k = d.blocked ? 'vr' : d.surprise ? null : d.access.type;
+  const badge = d.surprise ? {bg:'rgba(34,211,238,.18)',fg:C.surprise,l:'✦'} : BADGE[k];
+  return (
+    <div onClick={onClick} style={{
+      display: 'flex', alignItems: 'center', gap: 12,
+      padding: '12px 14px', background: C.bg2, borderRadius: 12,
+      border: `1px solid ${C.line}`, cursor: 'pointer',
+    }}>
+      <span style={{fontSize: 22}}>{d.f}</span>
+      <div style={{flex: 1, minWidth: 0}}>
+        <div style={{fontSize: 14, fontWeight: 500, color: C.txt}}>{d.n}</div>
+        <div style={{fontSize: 11, color: C.txt3}}>{d.r}</div>
+      </div>
+      <span style={{
+        padding: '3px 8px', borderRadius: 100, fontSize: 10, fontWeight: 600,
+        background: badge.bg, color: badge.fg,
+      }}>{badge.l}</span>
+    </div>
+  );
+};
+
+// ─── HOME TAB ────────────────────────────────────────────────────────
+function HomeTab({ profile, onDetail }) {
+  const results = computeAccess(profile.passports, profile.residence, profile.residenceExpiry, profile.visas);
+  const surprising = results.filter(d => d.surprise);
+  const passports = (profile.passports || []).map(c => PASSPORTS.find(p => p.code === c)).filter(Boolean);
+  const accessible = results.filter(d => !d.blocked);
+
+  return (
+    <div style={{height: '100%', overflowY: 'auto', background: C.bg, color: C.txt, paddingBottom: 80}}>
+      <div style={{padding: '68px 20px 20px'}}>
+        <div style={{fontSize: 13, color: C.txt3, marginBottom: 4}}>Good morning,</div>
+        <div style={{fontFamily: 'Cormorant Garamond, serif', fontSize: 30, fontWeight: 300, display: 'flex', alignItems: 'baseline', gap: 8}}>
+          <span style={{display:'inline-flex',gap:2}}>{passports.map(p => <span key={p.code}>{p.flag}</span>)}</span>
+          <span>where to <em style={{fontStyle: 'italic', color: C.accent}}>next?</em></span>
+        </div>
+      </div>
+
+      {/* Hero stat card */}
+      <div style={{padding: '0 20px 20px'}}>
+        <div style={{
+          background: `linear-gradient(135deg, ${C.accent}18 0%, ${C.bg3} 100%)`,
+          border: `1px solid ${C.accent}33`, borderRadius: 20, padding: 20,
+          position: 'relative', overflow: 'hidden',
+        }}>
+          <div style={{fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: C.accent, fontWeight: 600, marginBottom: 8}}>Your access score</div>
+          <div style={{display: 'flex', alignItems: 'baseline', gap: 10}}>
+            <div style={{fontFamily: 'Cormorant Garamond, serif', fontSize: 56, fontWeight: 300, lineHeight: 1, color: C.txt}}>{accessible.length}</div>
+            <div style={{fontSize: 14, color: C.txt2}}>of {results.length} destinations</div>
+          </div>
+          <div style={{display: 'flex', gap: 4, marginTop: 14}}>
+            {results.map((d,i) => (
+              <div key={i} style={{
+                flex: 1, height: 6, borderRadius: 3,
+                background: d.blocked ? C.line2 : d.surprise ? C.surprise : d.access.type==='vf' ? C.vf : d.access.type==='voa' ? C.voa : C.ev,
+                opacity: d.blocked ? .3 : 1,
+              }}/>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Surprising finds */}
+      {surprising.length > 0 && (
+        <>
+          <div style={{padding: '12px 20px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+            <h3 style={{fontFamily: 'Cormorant Garamond, serif', fontSize: 22, fontWeight: 400, margin: 0, display: 'flex', alignItems: 'center', gap: 8}}>
+              <span style={{color: C.accent}}>✦</span> Surprising finds
+            </h3>
+            <span style={{fontSize: 12, color: C.txt3}}>{surprising.length} places</span>
+          </div>
+          <div style={{padding: '0 20px 8px', fontSize: 12, color: C.txt3, lineHeight: 1.5}}>
+            Places accessible because of your visas and residence — not your passport alone.
+          </div>
+          <div style={{padding: '8px 0 20px', display: 'flex', gap: 12, overflowX: 'auto', paddingLeft: 20, paddingRight: 20}}>
+            {surprising.map(d => <DestCardH key={d.c} d={d} onClick={()=>onDetail(d)}/>)}
+          </div>
+        </>
+      )}
+
+      {/* All accessible */}
+      <div style={{padding: '8px 20px 12px'}}>
+        <h3 style={{fontFamily: 'Cormorant Garamond, serif', fontSize: 22, fontWeight: 400, margin: 0}}>All accessible</h3>
+      </div>
+      <div style={{padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 10}}>
+        {accessible.filter(d=>!d.surprise).slice(0, 12).map(d => <DestRow key={d.c} d={d} onClick={()=>onDetail(d)}/>)}
+      </div>
+    </div>
+  );
+}
+
+const DestCardH = ({d, onClick}) => (
+  <div onClick={onClick} style={{
+    flexShrink: 0, width: 220, borderRadius: 16, overflow: 'hidden',
+    border: `1px solid ${C.accent}33`, cursor: 'pointer',
+  }}>
+    <div style={{
+      height: 110, background: `linear-gradient(135deg, ${d.g[0]} 0%, ${d.g[1]} 100%)`,
+      position: 'relative', display: 'flex', alignItems: 'flex-end', padding: 12,
+    }}>
+      <div style={{position: 'absolute', top: 8, left: 8,
+        background: C.accent, color: '#000', fontSize: 9, fontWeight: 700,
+        padding: '3px 7px', borderRadius: 100, letterSpacing: .8}}>SURPRISE</div>
+      <span style={{position: 'absolute', top: 10, right: 12, fontSize: 34, filter: 'drop-shadow(0 2px 6px #0008)'}}>{d.f}</span>
+      <div style={{fontSize: 9, color: 'rgba(255,255,255,.55)', letterSpacing: 1, textTransform: 'uppercase'}}>{d.r}</div>
+    </div>
+    <div style={{padding: '12px 14px', background: C.bg2}}>
+      <div style={{fontFamily: 'Cormorant Garamond, serif', fontSize: 18, fontWeight: 400, lineHeight: 1.1}}>{d.n}</div>
+      <div style={{fontSize: 11, color: C.txt3, marginTop: 2}}>Via {d.via === 'schengen' ? 'Schengen' : d.via === 'us' ? 'US Visa' : d.via.toUpperCase()}</div>
+    </div>
+  </div>
+);
+
+const DestRow = ({d, onClick}) => {
+  const badge = BADGE[d.access.type];
+  return (
+    <div onClick={onClick} style={{
+      display: 'flex', alignItems: 'center', gap: 14,
+      background: C.bg2, border: `1px solid ${C.line}`, borderRadius: 14,
+      padding: 12, cursor: 'pointer',
+    }}>
+      <div style={{
+        width: 48, height: 48, borderRadius: 12,
+        background: `linear-gradient(135deg, ${d.g[0]}, ${d.g[1]})`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 26, flexShrink: 0,
+      }}>{d.f}</div>
+      <div style={{flex: 1, minWidth: 0}}>
+        <div style={{fontSize: 15, fontWeight: 500, color: C.txt}}>{d.n}</div>
+        <div style={{fontSize: 11, color: C.txt3, marginTop: 2}}>{d.r}</div>
+      </div>
+      <div style={{textAlign: 'right'}}>
+        <div style={{
+          padding: '3px 8px', borderRadius: 100, fontSize: 10, fontWeight: 600,
+          background: badge.bg, color: badge.fg, display: 'inline-block',
+        }}>{badge.l}</div>
+        {d.access.days && <div style={{fontSize: 10, color: C.txt3, marginTop: 3}}>{d.access.days}d</div>}
+      </div>
+    </div>
+  );
+};
+
+// ─── PROFILE TAB ─────────────────────────────────────────────────────
+function ProfileTab({ profile, user, onEdit, onLogout }) {
+  const passports = (profile.passports || []).map(c => PASSPORTS.find(p => p.code === c)).filter(Boolean);
+  const residence = RESIDENCE.find(r => r.code === profile.residence);
+  const results = computeAccess(profile.passports, profile.residence, profile.residenceExpiry, profile.visas);
+  const accessible = results.filter(d => !d.blocked).length;
+
+  return (
+    <div style={{height: '100%', overflowY: 'auto', background: C.bg, color: C.txt, paddingBottom: 80}}>
+      <div style={{padding: '68px 20px 20px'}}>
+        <div style={{fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: C.txt3, fontWeight: 500, marginBottom: 4}}>Profile</div>
+        <div style={{fontFamily: 'Cormorant Garamond, serif', fontSize: 30, fontWeight: 300}}>Personal area</div>
+      </div>
+
+      {/* Account card */}
+      <div style={{padding: '0 20px 20px'}}>
+        <div style={{
+          background: C.bg2, border: `1px solid ${C.line}`, borderRadius: 20,
+          padding: 20, display: 'flex', alignItems: 'center', gap: 14,
+        }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: '50%',
+            background: `linear-gradient(135deg, ${C.accent}, ${C.accent2})`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 22, fontWeight: 600, color: '#000',
+          }}>{(user?.name?.[0] || 'A').toUpperCase()}</div>
+          <div style={{flex: 1}}>
+            <div style={{fontSize: 16, fontWeight: 600, color: C.txt}}>{user?.name || 'Alex Morgan'}</div>
+            <div style={{fontSize: 13, color: C.txt3, display: 'flex', alignItems: 'center', gap: 4, marginTop: 2}}>
+              {user?.provider === 'apple' && <span></span>}
+              {user?.provider === 'google' && <span style={{color: '#ea4335'}}>G</span>}
+              {user?.email || 'alex@whereto.next'}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Stat ribbon */}
+      <div style={{padding: '0 20px 20px', display: 'flex', gap: 10}}>
+        <MiniStat n={accessible} l="Accessible"/>
+        <MiniStat n={results.filter(d=>d.surprise).length} l="Surprises"/>
+        <MiniStat n={profile.visas.length + (profile.residence?1:0) + (profile.passports?.length||0)} l="Documents"/>
+      </div>
+
+      {/* Documents section */}
+      <Section title="My Documents">
+        <Row icon="🛂" label={passports.length > 1 ? 'Passports' : 'Passport'} value={passports.length ? passports.map(p => `${p.flag} ${p.name}`).join(' · ') : 'Not set'}/>
+        <Row icon="🏠" label="Residence" value={residence ? `${residence.name}${profile.residenceExpiry ? ' · exp ' + fmtDate(profile.residenceExpiry) : ''}` : 'Not set'}/>
+        <Row icon="📄" label="Visas" value={profile.visas.length ? profile.visas.map(v => { const info = VISAS.find(x=>x.code===v.code); return info?.short + (v.expiry ? ` (${fmtDate(v.expiry)})` : ''); }).join(', ') : 'None added'}/>
+        <Row icon="✎" label="Edit documents" onClick={onEdit} arrow/>
+      </Section>
+
+      <Section title="Preferences">
+        <Row icon="🔔" label="Visa policy alerts" value="On" arrow/>
+        <Row icon="🌐" label="Language" value="English" arrow/>
+        <Row icon="💳" label="Flights provider" value="Google Flights" arrow/>
+      </Section>
+
+      <Section title="Support">
+        <Row icon="❔" label="Help & FAQ" arrow/>
+        <Row icon="🔒" label="Privacy Policy" arrow/>
+        <Row icon="📜" label="Terms of Service" arrow/>
+      </Section>
+
+      <div style={{padding: '8px 20px 24px'}}>
+        <button onClick={onLogout} style={{
+          width: '100%', height: 52, borderRadius: 14, background: 'transparent',
+          border: `1px solid ${C.line2}`, color: C.vr, fontSize: 15, fontWeight: 500,
+          fontFamily: 'inherit', cursor: 'pointer',
+        }}>Sign out</button>
+      </div>
+      <div style={{textAlign: 'center', fontSize: 11, color: C.txt3, padding: '0 20px 20px'}}>
+        WhereToNext v1.0.0 · Made with care
+      </div>
+    </div>
+  );
+}
+const MiniStat = ({n, l}) => (
+  <div style={{flex: 1, background: C.bg2, border: `1px solid ${C.line}`, borderRadius: 14, padding: '14px 10px', textAlign: 'center'}}>
+    <div style={{fontFamily: 'Cormorant Garamond, serif', fontSize: 26, fontWeight: 300, color: C.txt, lineHeight: 1}}>{n}</div>
+    <div style={{fontSize: 11, color: C.txt3, marginTop: 4, letterSpacing: .3}}>{l}</div>
+  </div>
+);
+const Section = ({title, children}) => (
+  <div style={{padding: '0 20px 20px'}}>
+    <div style={{fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: C.txt3, fontWeight: 600, padding: '0 4px 8px'}}>{title}</div>
+    <div style={{background: C.bg2, border: `1px solid ${C.line}`, borderRadius: 16, overflow: 'hidden'}}>
+      {children}
+    </div>
+  </div>
+);
+const Row = ({icon, label, value, arrow, onClick}) => (
+  <div onClick={onClick} style={{
+    display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px',
+    borderBottom: `1px solid ${C.line}`, cursor: onClick ? 'pointer' : 'default',
+  }}>
+    <span style={{fontSize: 18, width: 24, textAlign: 'center'}}>{icon}</span>
+    <span style={{flex: 1, fontSize: 14, color: C.txt}}>{label}</span>
+    {value && <span style={{fontSize: 13, color: C.txt2, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>{value}</span>}
+    {arrow && <svg width="8" height="14" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" stroke={C.txt3} strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+  </div>
+);
+
+// ─── DETAIL PAGE ─────────────────────────────────────────────────────
+function DetailPage({ d, profile, onBack }) {
+  const passport = PASSPORTS.find(p => p.code === (d.viaPassport || profile.passports?.[0]));
+  const badge = d.surprise ? {bg:'rgba(34,211,238,.18)',fg:C.surprise,l:'✦ Surprise Unlock'} : BADGE[d.access.type];
+  const via = d.via ? (d.via==='schengen'?'Schengen Visa/Residence':d.via==='us'?'US B1/B2 Visa':d.via==='uk'?'UK Visa':d.via==='ca'?'Canada Visa':d.via.toUpperCase()) : null;
+  return (
+    <div style={{height: '100%', background: C.bg, color: C.txt, overflowY: 'auto', paddingBottom: 40}}>
+      {/* hero */}
+      <div style={{
+        height: 240, background: `linear-gradient(135deg, ${d.g[0]}, ${d.g[1]})`,
+        padding: '80px 20px 20px', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+      }}>
+        <div style={{position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,.3), transparent 40%, rgba(0,0,0,.4))'}}/>
+        <div onClick={onBack} style={{
+          position: 'absolute', top: 70, left: 16, zIndex: 2,
+          width: 36, height: 36, borderRadius: '50%', background: 'rgba(0,0,0,.35)',
+          backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer',
+        }}>
+          <svg width="14" height="14" viewBox="0 0 14 14"><path d="M9 3L5 7l4 4" stroke="#fff" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </div>
+        <span style={{position: 'absolute', top: 60, right: 22, fontSize: 68, filter: 'drop-shadow(0 4px 12px #0006)', zIndex: 2}}>{d.f}</span>
+        <div style={{position: 'relative', zIndex: 2}}>
+          <div style={{fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(255,255,255,.6)', marginBottom: 6, fontWeight: 500}}>{d.r}</div>
+          <div style={{fontFamily: 'Cormorant Garamond, serif', fontSize: 38, fontWeight: 300, color: '#fff', lineHeight: 1}}>{d.n}</div>
+          <div style={{fontSize: 13, color: 'rgba(255,255,255,.65)', marginTop: 6}}>{d.tl}</div>
+        </div>
+      </div>
+
+      {/* Entry summary card */}
+      <div style={{padding: '20px 20px 0'}}>
+        <div style={{
+          background: C.bg2, border: `1px solid ${C.line}`, borderRadius: 20, padding: 18,
+        }}>
+          <div style={{fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: C.txt3, fontWeight: 600, marginBottom: 14}}>
+            Entry for {passport?.flag} {passport?.name}
+          </div>
+          <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12}}>
+            <div style={{flex: 1}}>
+              <span style={{
+                padding: '4px 12px', borderRadius: 100, fontSize: 11, fontWeight: 600,
+                background: badge.bg, color: badge.fg, display: 'inline-block',
+              }}>{badge.l}</span>
+              <div style={{fontSize: 13, color: C.txt2, marginTop: 10, lineHeight: 1.6}}>
+                {d.surprise ? `Accessible via your ${via} — not your passport alone.` : 'Your passport grants you entry to this destination.'}
+              </div>
+            </div>
+            {d.access.days && (
+              <div style={{textAlign: 'right'}}>
+                <div style={{fontFamily: 'Cormorant Garamond, serif', fontSize: 40, fontWeight: 300, color: C.accent, lineHeight: 1}}>{d.access.days}</div>
+                <div style={{fontSize: 10, color: C.txt3, letterSpacing: 1, textTransform: 'uppercase'}}>days max</div>
+              </div>
+            )}
+          </div>
+          <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 16, paddingTop: 16, borderTop: `1px solid ${C.line}`}}>
+            <MetaItem k="Currency" v={d.cu}/>
+            <MetaItem k="Language" v={d.la}/>
+            <MetaItem k="Method" v={d.surprise ? `Via ${via?.split(' ')[0]}` : 'Passport'}/>
+            <MetaItem k="Type" v={badge.l}/>
+          </div>
+        </div>
+      </div>
+
+      {/* Entry note */}
+      <div style={{padding: '16px 20px'}}>
+        <div style={{fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: C.txt3, fontWeight: 600, marginBottom: 10}}>Entry requirements</div>
+        <div style={{
+          background: 'rgba(34,211,238,.06)', border: `1px solid rgba(34,211,238,.2)`,
+          borderRadius: 14, padding: 14, fontSize: 13, color: C.txt2, lineHeight: 1.6,
+        }}>{d.nt}</div>
+      </div>
+
+      {/* Highlights */}
+      <div style={{padding: '8px 20px 16px'}}>
+        <div style={{fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: C.txt3, fontWeight: 600, marginBottom: 10}}>Not to be missed</div>
+        <div style={{display: 'flex', flexWrap: 'wrap', gap: 6}}>
+          {d.hl.map(h => (
+            <span key={h} style={{
+              padding: '6px 12px', background: C.bg3, border: `1px solid ${C.line}`,
+              borderRadius: 100, fontSize: 12, color: C.txt2,
+            }}>{h}</span>
+          ))}
+        </div>
+      </div>
+
+      {/* Disclaimer */}
+      <div style={{padding: '8px 20px 16px'}}>
+        <div style={{
+          background: 'rgba(250,204,21,.05)', border: `1px solid rgba(250,204,21,.2)`,
+          borderRadius: 14, padding: 14, fontSize: 12, color: C.txt3, lineHeight: 1.6,
+        }}>
+          <strong style={{color: C.accent2}}>Disclaimer:</strong> Visa policies change frequently. Always verify entry requirements with the official embassy of your destination before travelling. WhereToNext is not liable for travel disruptions.
+        </div>
+      </div>
+
+      {/* CTA */}
+      <div style={{padding: '8px 20px 20px', display: 'flex', flexDirection: 'column', gap: 10}}>
+        <button onClick={() => window.open('https://www.google.com/flights', '_blank')} style={{
+          height: 54, borderRadius: 27, background: C.accent, color: '#000',
+          fontSize: 15, fontWeight: 600, border: 'none', fontFamily: 'inherit',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer',
+        }}>
+          ✈ See Flights
+        </button>
+        <button style={{
+          height: 48, borderRadius: 24, background: 'transparent', border: `1px solid ${C.line2}`,
+          color: C.txt2, fontSize: 14, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer',
+        }}>♥ Save to trips</button>
+      </div>
+    </div>
+  );
+}
+const MetaItem = ({k, v}) => (
+  <div>
+    <div style={{fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: C.txt3, fontWeight: 600, marginBottom: 2}}>{k}</div>
+    <div style={{fontSize: 13, fontWeight: 500, color: C.txt}}>{v}</div>
+  </div>
+);
+
+// ─── TAB BAR ─────────────────────────────────────────────────────────
+function TabBar({ tab, setTab }) {
+  const tabs = [
+    {k:'home', l:'Discover', icon:(c)=><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 10L11 3l8 7v9a1 1 0 01-1 1h-4v-6H8v6H4a1 1 0 01-1-1v-9z" stroke={c} strokeWidth="1.6" strokeLinejoin="round"/></svg>},
+    {k:'map', l:'Map', icon:(c)=><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="8" stroke={c} strokeWidth="1.6"/><path d="M3 11h16M11 3c2.5 2.5 2.5 13.5 0 16M11 3c-2.5 2.5-2.5 13.5 0 16" stroke={c} strokeWidth="1.6"/></svg>},
+    {k:'profile', l:'Profile', icon:(c)=><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="8" r="3.5" stroke={c} strokeWidth="1.6"/><path d="M4 19c1.5-3 4-4.5 7-4.5s5.5 1.5 7 4.5" stroke={c} strokeWidth="1.6" strokeLinecap="round"/></svg>},
+  ];
+  return (
+    <div style={{
+      position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 50,
+      padding: '8px 20px 28px',
+      background: 'linear-gradient(to top, rgba(10,12,16,.98) 60%, rgba(10,12,16,.8))',
+      backdropFilter: 'blur(20px)',
+      borderTop: `1px solid ${C.line}`,
+      display: 'flex', justifyContent: 'space-around', alignItems: 'center',
+    }}>
+      {tabs.map(t => (
+        <div key={t.k} onClick={()=>setTab(t.k)} style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+          padding: '6px 20px', cursor: 'pointer',
+          color: tab === t.k ? C.accent : C.txt3,
+        }}>
+          {t.icon(tab === t.k ? C.accent : C.txt3)}
+          <span style={{fontSize: 10, fontWeight: 600, letterSpacing: .3}}>{t.l}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── APP ─────────────────────────────────────────────────────────────
+function MobileApp() {
+  const [screen, setScreen] = useState(ls('screen', 'splash'));
+  const [tab, setTab] = useState(ls('tab', 'home'));
+  // migrate old profile schema: {passport} -> {passports:[...]}, visas:['a'] -> [{code:'a',expiry:''}]
+  const [profile, setProfile] = useState(() => {
+    const p = ls('profile', null);
+    if (!p) return null;
+    const migrated = {
+      passports: p.passports ?? (p.passport ? [p.passport] : []),
+      residence: p.residence || '',
+      residenceExpiry: p.residenceExpiry || '',
+      visas: Array.isArray(p.visas) && p.visas.length && typeof p.visas[0] === 'string'
+        ? p.visas.map(c => ({code: c, expiry: ''}))
+        : (p.visas || []),
+    };
+    return migrated;
+  });
+  const [user, setUser] = useState(ls('user', null));
+  const [detail, setDetail] = useState(null);
+
+  useEffect(() => ss('screen', screen), [screen]);
+  useEffect(() => ss('tab', tab), [tab]);
+
+  function handleAuth(provider) {
+    const fake = {
+      apple: {name: 'Alex Morgan', email: 'alex@privaterelay.apple', provider: 'apple'},
+      google: {name: 'Alex Morgan', email: 'alex.morgan@gmail.com', provider: 'google'},
+      email: {name: 'Alex Morgan', email: 'alex@whereto.next', provider: 'email'},
+      guest: {name: 'Guest', email: 'guest@whereto.next', provider: 'guest'},
+    };
+    setUser(fake[provider]);
+    ss('user', fake[provider]);
+    setScreen(profile ? 'main' : 'entry');
+  }
+
+  function handleSubmit(data) {
+    setProfile(data);
+    ss('profile', data);
+    setScreen('main');
+  }
+
+  function logout() {
+    setUser(null); setProfile(null); ss('user', null); ss('profile', null);
+    setScreen('auth');
+  }
+
+  let content;
+  if (screen === 'splash')        content = <Splash onNext={() => setScreen('onboard')}/>;
+  else if (screen === 'onboard')  content = <Onboarding onNext={() => setScreen('auth')}/>;
+  else if (screen === 'auth')     content = <Auth onNext={handleAuth}/>;
+  else if (screen === 'entry')    content = <DataEntry initial={profile} onSubmit={handleSubmit}/>;
+  else if (screen === 'main' && profile) {
+    content = (
+      <div style={{height: '100%', position: 'relative'}}>
+        {detail
+          ? <DetailPage d={detail} profile={profile} onBack={()=>setDetail(null)}/>
+          : <>
+              {tab === 'home' && <HomeTab profile={profile} onDetail={setDetail}/>}
+              {tab === 'map' && <WorldMap profile={profile} onDetail={setDetail}/>}
+              {tab === 'profile' && <ProfileTab profile={profile} user={user} onEdit={()=>setScreen('entry')} onLogout={logout}/>}
+              <TabBar tab={tab} setTab={setTab}/>
+            </>
+        }
+      </div>
+    );
+  }
+
+  return (
+    <div className="stage">
+      <div className="mobile-app">
+        <IOSDevice dark>
+          {content}
+        </IOSDevice>
+      </div>
+      {/* dev controls */}
+      <div style={{position: 'absolute', bottom: -48, left: 0, right: 0, display: 'flex', gap: 6, justifyContent: 'center'}}>
+        {['splash','onboard','auth','entry','main'].map(s => (
+          <button key={s} onClick={()=>setScreen(s)} style={{
+            padding: '4px 10px', fontSize: 11, borderRadius: 100,
+            background: screen===s?C.accent:'transparent', color: screen===s?'#000':C.txt3,
+            border: `1px solid ${screen===s?C.accent:C.line2}`, cursor: 'pointer', fontFamily: 'inherit',
+          }}>{s}</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Minimal inline iOS frame
+function IOSDevice({ children, dark }) {
+  return (
+    <div style={{
+      width: 402, height: 874, borderRadius: 48, overflow: 'hidden',
+      position: 'relative', background: dark ? '#000' : '#F2F2F7',
+      boxShadow: '0 40px 80px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.06)',
+      fontFamily: '-apple-system, system-ui, sans-serif',
+    }}>
+      <div style={{
+        position: 'absolute', top: 11, left: '50%', transform: 'translateX(-50%)',
+        width: 126, height: 37, borderRadius: 24, background: '#000', zIndex: 50,
+      }}/>
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '20px 32px 14px', pointerEvents: 'none',
+      }}>
+        <span style={{fontSize: 15, fontWeight: 600, color: dark?'#fff':'#000'}}>9:41</span>
+        <div style={{display: 'flex', gap: 6, alignItems: 'center'}}>
+          <svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" rx=".5" fill={dark?'#fff':'#000'}/><rect x="4.5" y="5" width="3" height="6" rx=".5" fill={dark?'#fff':'#000'}/><rect x="9" y="2.5" width="3" height="8.5" rx=".5" fill={dark?'#fff':'#000'}/><rect x="13.5" y="0" width="3" height="11" rx=".5" fill={dark?'#fff':'#000'}/></svg>
+          <svg width="15" height="11" viewBox="0 0 15 11"><path d="M7.5 2.8c2 0 3.9.8 5.2 2.1l1-1A8.7 8.7 0 007.5 1.2 8.7 8.7 0 001.3 3.9l1 1A7.4 7.4 0 017.5 2.8zm0 3.2c1.2 0 2.3.5 3.1 1.3l1-1A6 6 0 007.5 4.6a6 6 0 00-4.1 1.7l1 1A4.4 4.4 0 017.5 6zM7.5 9a1.3 1.3 0 100 2.5 1.3 1.3 0 000-2.5z" fill={dark?'#fff':'#000'}/></svg>
+          <div style={{width: 24, height: 11, border: `1px solid ${dark?'#fff':'#000'}66`, borderRadius: 3, padding: 1, position: 'relative'}}>
+            <div style={{width: '80%', height: '100%', background: dark?'#fff':'#000', borderRadius: 1}}/>
+          </div>
+        </div>
+      </div>
+      <div style={{height: '100%'}}>{children}</div>
+      <div style={{
+        position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)',
+        width: 139, height: 5, borderRadius: 100, zIndex: 60,
+        background: dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.25)',
+      }}/>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<MobileApp/>);
+</script>
+</body>
+</html>
