@@ -1,3 +1,4 @@
-# Expo HAS CHANGED
+# Expo SDK 55
 
-Read the exact versioned docs at https://docs.expo.dev/versions/v56.0.0/ before writing any code.
+This project targets Expo SDK 55 (compatible with the current App Store Expo Go).
+Docs: https://docs.expo.dev/versions/v55.0.0/
